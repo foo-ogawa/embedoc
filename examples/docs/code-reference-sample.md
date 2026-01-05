@@ -7,7 +7,7 @@ This document demonstrates using inline datasources to manage code references. D
 
 ## Source Files Definition
 
-<!--@embedify-data:sources format="yaml"-->
+<!--@embedoc-data:sources format="yaml"-->
 ```
 embeds:
   table_columns:
@@ -21,10 +21,10 @@ embeds:
     description: OpenAPI endpoints embed
 config:
   main:
-    file: ./embedify.config.yaml
+    file: ./embedoc.config.yaml
     description: Main configuration file
 ```
-<!--@embedify-data:end-->
+<!--@embedoc-data:end-->
 
 ---
 
@@ -32,15 +32,15 @@ config:
 
 ### 1. Table Columns Embed
 
-**File**: <!--@embedify:inline_value datasource="sources" path="embeds.table_columns.file" format="code"-->
+**File**: <!--@embedoc:inline_value datasource="sources" path="embeds.table_columns.file" format="code"-->
 `./embeds/table_columns.ts`
-<!--@embedify:end-->
+<!--@embedoc:end-->
 
-**Description**: <!--@embedify:inline_value datasource="sources" path="embeds.table_columns.description" format="text"-->
+**Description**: <!--@embedoc:inline_value datasource="sources" path="embeds.table_columns.description" format="text"-->
 Table columns embed implementation
-<!--@embedify:end-->
+<!--@embedoc:end-->
 
-<!--@embedify:code_snippet file="./embeds/table_columns.ts" start="1" end="25" lang="typescript"-->
+<!--@embedoc:code_snippet file="./embeds/table_columns.ts" start="1" end="25" lang="typescript"-->
 ```typescript
 /**
  * table_columns Embed
@@ -70,21 +70,21 @@ export default defineEmbed({
 ```
 
 📄 Source: `./embeds/table_columns.ts` (lines 1-25)
-<!--@embedify:end-->
+<!--@embedoc:end-->
 
 ---
 
 ### 2. Code Snippet Embed
 
-**File**: <!--@embedify:inline_value datasource="sources" path="embeds.code_snippet.file" format="code"-->
+**File**: <!--@embedoc:inline_value datasource="sources" path="embeds.code_snippet.file" format="code"-->
 `./embeds/code_snippet.ts`
-<!--@embedify:end-->
+<!--@embedoc:end-->
 
-**Description**: <!--@embedify:inline_value datasource="sources" path="embeds.code_snippet.description" format="text"-->
+**Description**: <!--@embedoc:inline_value datasource="sources" path="embeds.code_snippet.description" format="text"-->
 Code snippet embed implementation
-<!--@embedify:end-->
+<!--@embedoc:end-->
 
-<!--@embedify:code_snippet file="./embeds/code_snippet.ts" start="14" end="45" lang="typescript" title="File reading and line extraction"-->
+<!--@embedoc:code_snippet file="./embeds/code_snippet.ts" start="14" end="45" lang="typescript" title="File reading and line extraction"-->
 **File reading and line extraction**
 
 ```typescript
@@ -105,7 +105,7 @@ export default defineEmbed({
       return { content: '⚠️ `file` parameter is required' };
     }
 
-    // Resolve file path relative to project root (where embedify.config.yaml is)
+    // Resolve file path relative to project root (where embedoc.config.yaml is)
     const resolvedPath = path.resolve(process.cwd(), filePath);
 
     if (!fs.existsSync(resolvedPath)) {
@@ -123,21 +123,21 @@ export default defineEmbed({
 ```
 
 📄 Source: `./embeds/code_snippet.ts` (lines 14-45)
-<!--@embedify:end-->
+<!--@embedoc:end-->
 
 ---
 
 ### 3. OpenAPI Endpoints Embed
 
-**File**: <!--@embedify:inline_value datasource="sources" path="embeds.openapi_endpoints.file" format="code"-->
+**File**: <!--@embedoc:inline_value datasource="sources" path="embeds.openapi_endpoints.file" format="code"-->
 `./embeds/openapi_endpoints.ts`
-<!--@embedify:end-->
+<!--@embedoc:end-->
 
-**Description**: <!--@embedify:inline_value datasource="sources" path="embeds.openapi_endpoints.description" format="text"-->
+**Description**: <!--@embedoc:inline_value datasource="sources" path="embeds.openapi_endpoints.description" format="text"-->
 OpenAPI endpoints embed
-<!--@embedify:end-->
+<!--@embedoc:end-->
 
-<!--@embedify:code_snippet file="./embeds/openapi_endpoints.ts" start="30" end="55" lang="typescript" title="OpenAPI parsing logic"-->
+<!--@embedoc:code_snippet file="./embeds/openapi_endpoints.ts" start="30" end="55" lang="typescript" title="OpenAPI parsing logic"-->
 **OpenAPI parsing logic**
 
 ```typescript
@@ -170,25 +170,25 @@ export default defineEmbed({
 ```
 
 📄 Source: `./embeds/openapi_endpoints.ts` (lines 30-55)
-<!--@embedify:end-->
+<!--@embedoc:end-->
 
 ---
 
 ## Configuration Reference
 
-**File**: <!--@embedify:inline_value datasource="sources" path="config.main.file" format="code"-->
-`./embedify.config.yaml`
-<!--@embedify:end-->
+**File**: <!--@embedoc:inline_value datasource="sources" path="config.main.file" format="code"-->
+`./embedoc.config.yaml`
+<!--@embedoc:end-->
 
-**Description**: <!--@embedify:inline_value datasource="sources" path="config.main.description" format="text"-->
+**Description**: <!--@embedoc:inline_value datasource="sources" path="config.main.description" format="text"-->
 Main configuration file
-<!--@embedify:end-->
+<!--@embedoc:end-->
 
-<!--@embedify:code_snippet file="./embedify.config.yaml" start="1" end="30" lang="yaml" title="embedify.config.yaml"-->
-**embedify.config.yaml**
+<!--@embedoc:code_snippet file="./embedoc.config.yaml" start="1" end="30" lang="yaml" title="embedoc.config.yaml"-->
+**embedoc.config.yaml**
 
 ```yaml
-# embedify configuration file example
+# embedoc configuration file example
 version: "1.0"
 
 # Target files
@@ -220,8 +220,8 @@ datasources:
 
 ```
 
-📄 Source: `./embedify.config.yaml` (lines 1-30)
-<!--@embedify:end-->
+📄 Source: `./embedoc.config.yaml` (lines 1-30)
+<!--@embedoc:end-->
 
 ---
 

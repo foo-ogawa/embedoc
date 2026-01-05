@@ -47,7 +47,7 @@ describe('parseDotPath', () => {
 
 describe('resolveDotPath', () => {
   const testObj = {
-    name: 'embedify',
+    name: 'embedoc',
     version: '1.0.0',
     author: {
       name: 'Jane',
@@ -62,7 +62,7 @@ describe('resolveDotPath', () => {
   };
 
   it('should resolve simple property', () => {
-    expect(resolveDotPath(testObj, 'name')).toBe('embedify');
+    expect(resolveDotPath(testObj, 'name')).toBe('embedoc');
   });
 
   it('should resolve nested property', () => {
@@ -142,11 +142,11 @@ describe('parseInlineContent', () => {
   describe('code fence stripping', () => {
     it('should strip yaml code fences', () => {
       const content = `\`\`\`yaml
-name: embedify
+name: embedoc
 version: 1.0.0
 \`\`\``;
       const result = parseInlineContent(content, 'yaml');
-      expect(result).toEqual({ name: 'embedify', version: '1.0.0' });
+      expect(result).toEqual({ name: 'embedoc', version: '1.0.0' });
     });
 
     it('should strip json code fences', () => {
@@ -159,21 +159,21 @@ version: 1.0.0
 
     it('should strip plain code fences', () => {
       const content = `\`\`\`
-name: embedify
+name: embedoc
 \`\`\``;
       const result = parseInlineContent(content, 'yaml');
-      expect(result).toEqual({ name: 'embedify' });
+      expect(result).toEqual({ name: 'embedoc' });
     });
 
     it('should handle content without code fences', () => {
-      const content = `name: embedify`;
+      const content = `name: embedoc`;
       const result = parseInlineContent(content, 'yaml');
-      expect(result).toEqual({ name: 'embedify' });
+      expect(result).toEqual({ name: 'embedoc' });
     });
 
     it('should not strip code fences when disabled', () => {
       const content = `\`\`\`yaml
-name: embedify
+name: embedoc
 \`\`\``;
       // When stripCodeFences is false, the backticks remain and YAML parsing fails or returns unexpected result
       // Since the content starts with ```, YAML will parse it differently
@@ -183,24 +183,24 @@ name: embedify
 
     it('should use custom strip patterns', () => {
       const content = `<!-- START -->
-name: embedify
+name: embedoc
 <!-- END -->`;
       const result = parseInlineContent(content, 'yaml', {
         stripCodeFences: true,
         stripPatterns: ['^<!--\\s*START\\s*-->\\s*\\n?', '\\n?<!--\\s*END\\s*-->\\s*$'],
       });
-      expect(result).toEqual({ name: 'embedify' });
+      expect(result).toEqual({ name: 'embedoc' });
     });
   });
 
   describe('yaml format', () => {
     it('should parse YAML object', () => {
       const content = `
-name: embedify
+name: embedoc
 version: 1.0.0
 `;
       const result = parseInlineContent(content, 'yaml');
-      expect(result).toEqual({ name: 'embedify', version: '1.0.0' });
+      expect(result).toEqual({ name: 'embedoc', version: '1.0.0' });
     });
 
     it('should parse YAML array', () => {
@@ -230,9 +230,9 @@ author:
 
   describe('json format', () => {
     it('should parse JSON object', () => {
-      const content = '{"name": "embedify", "version": "1.0.0"}';
+      const content = '{"name": "embedoc", "version": "1.0.0"}';
       const result = parseInlineContent(content, 'json');
-      expect(result).toEqual({ name: 'embedify', version: '1.0.0' });
+      expect(result).toEqual({ name: 'embedoc', version: '1.0.0' });
     });
 
     it('should parse JSON array', () => {
@@ -350,7 +350,7 @@ describe('buildInlineDatasources', () => {
       {
         name: 'project',
         format: 'yaml',
-        content: 'name: embedify\nversion: 1.0.0',
+        content: 'name: embedoc\nversion: 1.0.0',
         startLine: 5,
         endLine: 8,
         byteSize: 30,
@@ -361,7 +361,7 @@ describe('buildInlineDatasources', () => {
 
     expect(datasources.has('project')).toBe(true);
     const ds = datasources.get('project')!;
-    expect(ds.data).toEqual({ name: 'embedify', version: '1.0.0' });
+    expect(ds.data).toEqual({ name: 'embedoc', version: '1.0.0' });
   });
 
   it('should build datasource from dot-path definitions', () => {
@@ -369,7 +369,7 @@ describe('buildInlineDatasources', () => {
       {
         name: 'project.name',
         format: 'text',
-        content: 'embedify',
+        content: 'embedoc',
         startLine: 5,
         endLine: 5,
         byteSize: 8,
@@ -397,7 +397,7 @@ describe('buildInlineDatasources', () => {
     expect(datasources.has('project')).toBe(true);
     const ds = datasources.get('project')!;
     expect(ds.data).toEqual({
-      name: 'embedify',
+      name: 'embedoc',
       version: '1.0.0',
       author: { name: 'Jane' },
     });

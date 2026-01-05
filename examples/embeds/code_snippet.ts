@@ -2,10 +2,10 @@
  * code_snippet Embed
  * Extract and display code snippets from specified files
  *
- * Usage: <!--@embedify:code_snippet file="path/to/file.ts" start="10" end="20" lang="typescript"-->
+ * Usage: <!--@embedoc:code_snippet file="path/to/file.ts" start="10" end="20" lang="typescript"-->
  *
  * Parameters:
- *   - file: File path (relative to embedify.config.yaml)
+ *   - file: File path (relative to embedoc.config.yaml)
  *   - start: Start line number (default: 1)
  *   - end: End line number (default: end of file)
  *   - lang: Language (default: auto-detect from extension)
@@ -28,7 +28,7 @@ export default defineEmbed({
       return { content: '⚠️ `file` parameter is required' };
     }
 
-    // Resolve file path relative to project root (where embedify.config.yaml is)
+    // Resolve file path relative to project root (where embedoc.config.yaml is)
     const resolvedPath = path.resolve(process.cwd(), filePath);
 
     if (!fs.existsSync(resolvedPath)) {

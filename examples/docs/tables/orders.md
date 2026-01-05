@@ -18,7 +18,7 @@ embeds:
 
 ## Column Definitions
 
-<!--@embedify:table_columns id="orders"-->
+<!--@embedoc:table_columns id="orders"-->
 | Column Name | Type | NOT NULL | Default | Comment |
 | --- | --- | --- | --- | --- |
 | id | integer | ✔ | NULL | Order ID |
@@ -26,18 +26,18 @@ embeds:
 | total_amount | decimal(10,2) | ✔ | 0 | Total amount |
 | status | varchar(20) | ✔ | 'pending' | Order status |
 | created_at | timestamp | ✔ | CURRENT_TIMESTAMP | Created at |
-<!--@embedify:end-->
+<!--@embedoc:end-->
 
 ## Table Dependencies
 
-<!--@embedify:table_relations id="orders"-->
+<!--@embedoc:table_relations id="orders"-->
 ```mermaid
 flowchart LR
   orders[("**orders**")]
   users[("users")]
   orders -->|"user_id"| users
 ```
-<!--@embedify:end-->
+<!--@embedoc:end-->
 
 ## Change History
 

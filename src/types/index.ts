@@ -1,5 +1,5 @@
 /**
- * embedify Type Definitions
+ * embedoc Type Definitions
  */
 
 // =============================================================================

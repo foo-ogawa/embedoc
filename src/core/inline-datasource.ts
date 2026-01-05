@@ -1,6 +1,6 @@
 /**
  * Inline Datasource
- * Document-local datasources defined with @embedify-data markers
+ * Document-local datasources defined with @embedoc-data markers
  */
 
 import yaml from 'js-yaml';

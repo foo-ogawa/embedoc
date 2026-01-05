@@ -1,5 +1,5 @@
 {
-  "name": "embedify",
+  "name": "embedoc",
   "version": "0.9.0",
   "description": "In-place document generator that auto-updates marker blocks while preserving manual edits. Supports multiple datasources (SQLite, CSV, JSON, YAML, glob), programmable TypeScript embeds, and incremental builds with dependency tracking.",
   "type": "module",
@@ -13,7 +13,7 @@
     "./package.json": "./package.json"
   },
   "bin": {
-    "embedify": "./dist/cli.js"
+    "embedoc": "./dist/cli.js"
   },
   "files": [
     "dist",
@@ -54,12 +54,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/foo-ogawa/embedify.git"
+    "url": "git+https://github.com/foo-ogawa/embedoc.git"
   },
   "bugs": {
-    "url": "https://github.com/foo-ogawa/embedify/issues"
+    "url": "https://github.com/foo-ogawa/embedoc/issues"
   },
-  "homepage": "https://github.com/foo-ogawa/embedify#readme",
+  "homepage": "https://github.com/foo-ogawa/embedoc#readme",
   "engines": {
     "node": ">=18.0.0"
   },

@@ -2,7 +2,7 @@
  * inline_value Embed
  * Display a value from inline datasource with optional formatting
  *
- * Usage: <!--@embedify:inline_value datasource="project" path="author.name"-->
+ * Usage: <!--@embedoc:inline_value datasource="project" path="author.name"-->
  *
  * Parameters:
  *   - datasource: Name of the inline datasource

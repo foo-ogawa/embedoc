@@ -2,7 +2,7 @@
  * feature_table Embed
  * Display a feature list from inline datasource as a table
  *
- * Usage: <!--@embedify:feature_table datasource="feature_list"-->
+ * Usage: <!--@embedoc:feature_table datasource="feature_list"-->
  *
  * Parameters:
  *   - datasource: Name of the inline datasource containing features array

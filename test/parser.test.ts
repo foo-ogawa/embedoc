@@ -41,11 +41,11 @@ describe('parseMarkers', () => {
     const content = `
 # Title
 
-<!--@embedify:table_columns id="users"-->
+<!--@embedoc:table_columns id="users"-->
 | Column | Type |
 | --- | --- |
 | id | integer |
-<!--@embedify:end-->
+<!--@embedoc:end-->
 
 Other content
 `;
@@ -60,11 +60,11 @@ Other content
   it('should parse block comment style markers', () => {
     const content = `
 const x = 1;
-/*@embedify:type_definition id="User"*/
+/*@embedoc:type_definition id="User"*/
 export interface User {
   id: number;
 }
-/*@embedify:end*/
+/*@embedoc:end*/
 const y = 2;
 `;
     const markers = parseMarkers(content, DEFAULT_COMMENT_STYLES.block);
@@ -77,9 +77,9 @@ const y = 2;
   it('should parse line comment style markers', () => {
     const content = `
 const x = 1;
-//@embedify:constants id="config"
+//@embedoc:constants id="config"
 const API_URL = "https://api.example.com";
-//@embedify:end
+//@embedoc:end
 const y = 2;
 `;
     const markers = parseMarkers(content, DEFAULT_COMMENT_STYLES.line);
@@ -92,9 +92,9 @@ const y = 2;
   it('should parse hash comment style markers', () => {
     const content = `
 x = 1
-#@embedify:constants id="config"
+#@embedoc:constants id="config"
 API_URL = "https://api.example.com"
-#@embedify:end
+#@embedoc:end
 y = 2
 `;
     const markers = parseMarkers(content, DEFAULT_COMMENT_STYLES.hash);
@@ -107,9 +107,9 @@ y = 2
   it('should parse SQL comment style markers', () => {
     const content = `
 SELECT * FROM users;
---@embedify:view_definition id="active_users"
+--@embedoc:view_definition id="active_users"
 CREATE VIEW active_users AS SELECT * FROM users WHERE active = true;
---@embedify:end
+--@embedoc:end
 SELECT * FROM orders;
 `;
     const markers = parseMarkers(content, DEFAULT_COMMENT_STYLES.sql);
@@ -121,15 +121,15 @@ SELECT * FROM orders;
 
   it('should parse multiple markers in same file', () => {
     const content = `
-<!--@embedify:header id="main"-->
+<!--@embedoc:header id="main"-->
 Header content
-<!--@embedify:end-->
+<!--@embedoc:end-->
 
 Some text
 
-<!--@embedify:footer id="main"-->
+<!--@embedoc:footer id="main"-->
 Footer content
-<!--@embedify:end-->
+<!--@embedoc:end-->
 `;
     const markers = parseMarkers(content, DEFAULT_COMMENT_STYLES.html);
     
@@ -147,9 +147,9 @@ Footer content
 
   it('should handle markers without attributes', () => {
     const content = `
-<!--@embedify:table_index-->
+<!--@embedoc:table_index-->
 | Table | Schema |
-<!--@embedify:end-->
+<!--@embedoc:end-->
 `;
     const markers = parseMarkers(content, DEFAULT_COMMENT_STYLES.html);
     

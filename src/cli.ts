@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * embedify CLI
+ * embedoc CLI
  */
 
 import { Command } from 'commander';
@@ -21,7 +21,7 @@ import { DependencyGraph } from './core/dependency.js';
 const program = new Command();
 
 program
-  .name('embedify')
+  .name('embedoc')
   .description('In-Place Document Generator')
   .version('0.1.0');
 
@@ -94,7 +94,7 @@ async function loadEmbeds(
 program
   .command('build [files...]')
   .description('Build documents by replacing markers with embed results')
-  .option('-c, --config <path>', 'Path to config file', 'embedify.config.yaml')
+  .option('-c, --config <path>', 'Path to config file', 'embedoc.config.yaml')
   .option('-d, --dry-run', 'Dry run without writing files')
   .option('-v, --verbose', 'Verbose output')
   .action(async (files: string[], options) => {
@@ -161,7 +161,7 @@ program
 program
   .command('generate')
   .description('Generate new files from datasource records')
-  .option('-c, --config <path>', 'Path to config file', 'embedify.config.yaml')
+  .option('-c, --config <path>', 'Path to config file', 'embedoc.config.yaml')
   .option('-s, --datasource <name>', 'Specific datasource to process')
   .option('-g, --generator <name>', 'Specific generator template to use')
   .option('-a, --all', 'Process all datasources')
@@ -238,7 +238,7 @@ program
 program
   .command('watch')
   .description('Watch files and rebuild on changes')
-  .option('-c, --config <path>', 'Path to config file', 'embedify.config.yaml')
+  .option('-c, --config <path>', 'Path to config file', 'embedoc.config.yaml')
   .option('-v, --verbose', 'Verbose output')
   .option('--debug-deps', 'Show dependency graph for debugging')
   .action(async (options) => {

@@ -5,7 +5,7 @@ embeds:
 ---
 # Database Specification
 
-This document is a sample that is auto-generated and updated by embedify.
+This document is a sample that is auto-generated and updated by embedoc.
 
 ## Overview
 
@@ -16,14 +16,14 @@ This document is a sample that is auto-generated and updated by embedify.
 
 The following tables are defined. Click on each table name to navigate to the detail page.
 
-<!--@embedify:table_index-->
+<!--@embedoc:table_index-->
 | Table Name | Schema | Description |
 | --- | --- | --- |
 | [orders](./tables/orders.md) | public | Table for managing order information |
 | [products](./tables/products.md) | public | Table for managing product information |
 | [users](./tables/users.md) | public | Table for managing user information |
-<!--@embedify:end-->
+<!--@embedoc:end-->
 
 ## Notes
 
-This section can also be manually edited. embedify only updates the areas enclosed by the markers above.
+This section can also be manually edited. embedoc only updates the areas enclosed by the markers above.

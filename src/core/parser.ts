@@ -110,20 +110,20 @@ export function parseMarkers(
   const endEscaped = end ? escapeRegExp(end) : '';
 
   // Start marker pattern
-  // {start}@embedify:{template_name} {attributes}{end}
+  // {start}@embedoc:{template_name} {attributes}{end}
   // For line comment style (empty end), match until newline
   // Note: "end" is reserved for end marker, so exclude it (using negative lookahead)
   let startPattern: RegExp;
   if (end) {
     // Block comment style
     startPattern = new RegExp(
-      `${startEscaped}\\s*@embedify:(?!end\\b)(\\w+)\\s*([^]*?)\\s*${endEscaped}`,
+      `${startEscaped}\\s*@embedoc:(?!end\\b)(\\w+)\\s*([^]*?)\\s*${endEscaped}`,
       'g'
     );
   } else {
     // Line comment style
     startPattern = new RegExp(
-      `${startEscaped}\\s*@embedify:(?!end\\b)(\\w+)\\s*(.*)$`,
+      `${startEscaped}\\s*@embedoc:(?!end\\b)(\\w+)\\s*(.*)$`,
       'gm'
     );
   }
@@ -131,9 +131,9 @@ export function parseMarkers(
   // End marker pattern
   let endPattern: RegExp;
   if (end) {
-    endPattern = new RegExp(`${startEscaped}\\s*@embedify:end\\s*${endEscaped}`);
+    endPattern = new RegExp(`${startEscaped}\\s*@embedoc:end\\s*${endEscaped}`);
   } else {
-    endPattern = new RegExp(`${startEscaped}\\s*@embedify:end\\s*$`, 'm');
+    endPattern = new RegExp(`${startEscaped}\\s*@embedoc:end\\s*$`, 'm');
   }
 
   let match: RegExpExecArray | null;
@@ -230,7 +230,7 @@ function getLineNumber(content: string, index: number): number {
 }
 
 /**
- * Parse inline data markers (@embedify-data)
+ * Parse inline data markers (@embedoc-data)
  */
 export function parseInlineDataMarkers(
   content: string,
@@ -242,8 +242,8 @@ export function parseInlineDataMarkers(
   const startEscaped = escapeRegExp(start);
   const endEscaped = end ? escapeRegExp(end) : '';
 
-  // Pattern for @embedify-data:name markers (excluding 'end')
-  // Supports: @embedify-data:name or @embedify-data:name format="yaml"
+  // Pattern for @embedoc-data:name markers (excluding 'end')
+  // Supports: @embedoc-data:name or @embedoc-data:name format="yaml"
   let startPattern: RegExp;
   let endPattern: RegExp;
 
@@ -251,17 +251,17 @@ export function parseInlineDataMarkers(
     // Block comment style - capture attributes without newlines
     // Use negative lookahead to exclude 'end' as a name
     startPattern = new RegExp(
-      `${startEscaped}\\s*@embedify-data:(?!end\\s*${endEscaped})([\\w.]+)(?:\\s+([^\\n]*?))?\\s*${endEscaped}`,
+      `${startEscaped}\\s*@embedoc-data:(?!end\\s*${endEscaped})([\\w.]+)(?:\\s+([^\\n]*?))?\\s*${endEscaped}`,
       'g'
     );
-    endPattern = new RegExp(`${startEscaped}\\s*@embedify-data:end\\s*${endEscaped}`);
+    endPattern = new RegExp(`${startEscaped}\\s*@embedoc-data:end\\s*${endEscaped}`);
   } else {
     // Line comment style - exclude 'end' as a name
     startPattern = new RegExp(
-      `${startEscaped}\\s*@embedify-data:(?!end\\s*$)([\\w.]+)(?:\\s+(.*))?$`,
+      `${startEscaped}\\s*@embedoc-data:(?!end\\s*$)([\\w.]+)(?:\\s+(.*))?$`,
       'gm'
     );
-    endPattern = new RegExp(`${startEscaped}\\s*@embedify-data:end\\s*$`, 'm');
+    endPattern = new RegExp(`${startEscaped}\\s*@embedoc-data:end\\s*$`, 'm');
   }
 
   let match: RegExpExecArray | null;

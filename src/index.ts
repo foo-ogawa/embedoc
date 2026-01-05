@@ -1,9 +1,9 @@
 /**
- * embedify - In-Place Document Generator
+ * embedoc - In-Place Document Generator
  *
  * @example
  * ```typescript
- * import { defineEmbed, build, generateAll } from 'embedify';
+ * import { defineEmbed, build, generateAll } from 'embedoc';
  *
  * const myEmbed = defineEmbed({
  *   dependsOn: ['my_datasource'],
@@ -99,7 +99,7 @@ import type { EmbedDefinition, DefineEmbedFn } from './types/index.js';
  *
  * @example
  * ```typescript
- * import { defineEmbed } from 'embedify';
+ * import { defineEmbed } from 'embedoc';
  *
  * export default defineEmbed({
  *   dependsOn: ['metadata_db'],

@@ -18,20 +18,20 @@ embeds:
 
 ## Column Definitions
 
-<!--@embedify:table_columns id="products"-->
+<!--@embedoc:table_columns id="products"-->
 | Column Name | Type | NOT NULL | Default | Comment |
 | --- | --- | --- | --- | --- |
 | id | integer | ✔ | NULL | Product ID |
 | name | varchar(200) | ✔ | NULL | Product name |
 | price | decimal(10,2) | ✔ | 0 | Price |
 | stock | integer | ✔ | 0 | Stock quantity |
-<!--@embedify:end-->
+<!--@embedoc:end-->
 
 ## Table Dependencies
 
-<!--@embedify:table_relations id="products"-->
+<!--@embedoc:table_relations id="products"-->
 ⚠️ No relations found for table: products
-<!--@embedify:end-->
+<!--@embedoc:end-->
 
 ## Change History
 

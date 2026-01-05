@@ -2,7 +2,7 @@ openapi: 3.0.3
 info:
   title: Sample API
   version: 1.0.0
-  description: A sample API for demonstrating embedify's OpenAPI integration
+  description: A sample API for demonstrating embedoc's OpenAPI integration
 
 servers:
   - url: https://api.example.com/v1

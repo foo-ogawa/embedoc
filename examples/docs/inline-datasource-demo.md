@@ -10,8 +10,8 @@ This document demonstrates the inline datasource feature. Data is defined direct
 
 ## Project Information
 
-<!--@embedify-data:project format="yaml"-->
-name: embedify
+<!--@embedoc-data:project format="yaml"-->
+name: embedoc
 version: 1.0.0
 description: In-Place Document Generator
 author:
@@ -19,32 +19,32 @@ author:
   email: jane@example.com
   github: janedev
 repository:
-  url: https://github.com/janedev/embedify
+  url: https://github.com/janedev/embedoc
   branch: main
 license: MIT
-<!--@embedify-data:end-->
+<!--@embedoc-data:end-->
 
-This project, **<!--@embedify:inline_value datasource="project" path="name" format="text"-->
-embedify
-<!--@embedify:end-->** (v<!--@embedify:inline_value datasource="project" path="version" format="text"-->
+This project, **<!--@embedoc:inline_value datasource="project" path="name" format="text"-->
+embedoc
+<!--@embedoc:end-->** (v<!--@embedoc:inline_value datasource="project" path="version" format="text"-->
 1.0.0
-<!--@embedify:end-->), is a <!--@embedify:inline_value datasource="project" path="description" format="text"-->
+<!--@embedoc:end-->), is a <!--@embedoc:inline_value datasource="project" path="description" format="text"-->
 In-Place Document Generator
-<!--@embedify:end-->.
+<!--@embedoc:end-->.
 
 ### Author
 
 | Property | Value |
 |----------|-------|
-| Name | <!--@embedify:inline_value datasource="project" path="author.name" format="text"-->
+| Name | <!--@embedoc:inline_value datasource="project" path="author.name" format="text"-->
 Jane Developer
-<!--@embedify:end--> |
-| Email | <!--@embedify:inline_value datasource="project" path="author.email" format="text"-->
+<!--@embedoc:end--> |
+| Email | <!--@embedoc:inline_value datasource="project" path="author.email" format="text"-->
 jane@example.com
-<!--@embedify:end--> |
-| GitHub | <!--@embedify:inline_value datasource="project" path="author.github" format="text"-->
+<!--@embedoc:end--> |
+| GitHub | <!--@embedoc:inline_value datasource="project" path="author.github" format="text"-->
 janedev
-<!--@embedify:end--> |
+<!--@embedoc:end--> |
 
 ---
 
@@ -54,22 +54,22 @@ You can also define data inline where it's contextually relevant:
 
 ### Current Version
 
-The current stable version is <!--@embedify-data:meta.version-->2.0.0-beta<!--@embedify-data:end-->.
+The current stable version is <!--@embedoc-data:meta.version-->2.0.0-beta<!--@embedoc-data:end-->.
 
 ### Build Status
 
-Build status: <!--@embedify-data:meta.build_status-->passing<!--@embedify-data:end-->
+Build status: <!--@embedoc-data:meta.build_status-->passing<!--@embedoc-data:end-->
 
 ### Summary
 
 | Property | Value |
 |----------|-------|
-| Version | <!--@embedify:inline_value datasource="meta" path="version" format="code"-->
+| Version | <!--@embedoc:inline_value datasource="meta" path="version" format="code"-->
 `2.0.0-beta`
-<!--@embedify:end--> |
-| Build | <!--@embedify:inline_value datasource="meta" path="build_status" format="text"-->
+<!--@embedoc:end--> |
+| Build | <!--@embedoc:inline_value datasource="meta" path="build_status" format="text"-->
 passing
-<!--@embedify:end--> |
+<!--@embedoc:end--> |
 
 ---
 
@@ -79,7 +79,7 @@ passing
 
 Here's a snippet from the `table_columns.ts` embed:
 
-<!--@embedify:code_snippet file="./embeds/table_columns.ts" start="8" end="20" lang="typescript" title="table_columns.ts"-->
+<!--@embedoc:code_snippet file="./embeds/table_columns.ts" start="8" end="20" lang="typescript" title="table_columns.ts"-->
 **table_columns.ts**
 
 ```typescript
@@ -99,7 +99,7 @@ export default defineEmbed({
 ```
 
 📄 Source: `./embeds/table_columns.ts` (lines 8-20)
-<!--@embedify:end-->
+<!--@embedoc:end-->
 
 ---
 
@@ -107,7 +107,7 @@ export default defineEmbed({
 
 Features defined in inline datasource:
 
-<!--@embedify-data:feature_list format="yaml"-->
+<!--@embedoc-data:feature_list format="yaml"-->
 - name: In-Place Updates
   description: Auto-generated and manually edited sections coexist
   status: stable
@@ -120,16 +120,16 @@ Features defined in inline datasource:
 - name: Watch Mode
   description: Automatic rebuild on file changes
   status: stable
-<!--@embedify-data:end-->
+<!--@embedoc-data:end-->
 
 | Feature | Description | Status |
 |---------|-------------|--------|
-<!--@embedify:feature_table datasource="feature_list"-->
+<!--@embedoc:feature_table datasource="feature_list"-->
 | In-Place Updates | Auto-generated and manually edited sections coexist | ✅ stable |
 | Multiple Formats | HTML, block, line, hash, SQL comment styles | ✅ stable |
 | Inline Datasources | Define data directly in documents | 🔶 beta |
 | Watch Mode | Automatic rebuild on file changes | ✅ stable |
-<!--@embedify:end-->
+<!--@embedoc:end-->
 
 ---
 
@@ -137,7 +137,7 @@ Features defined in inline datasource:
 
 API configuration defined inline with JSON:
 
-<!--@embedify-data:api_config format="json"-->
+<!--@embedoc-data:api_config format="json"-->
 {
   "base_url": "https://api.example.com/v2",
   "timeout": 30,
@@ -146,19 +146,19 @@ API configuration defined inline with JSON:
     "backoff": "exponential"
   }
 }
-<!--@embedify-data:end-->
+<!--@embedoc-data:end-->
 
 | Setting | Value |
 |---------|-------|
-| Base URL | <!--@embedify:inline_value datasource="api_config" path="base_url" format="code"-->
+| Base URL | <!--@embedoc:inline_value datasource="api_config" path="base_url" format="code"-->
 `https://api.example.com/v2`
-<!--@embedify:end--> |
-| Timeout | <!--@embedify:inline_value datasource="api_config" path="timeout" format="text"-->
+<!--@embedoc:end--> |
+| Timeout | <!--@embedoc:inline_value datasource="api_config" path="timeout" format="text"-->
 30
-<!--@embedify:end--> seconds |
-| Max Retries | <!--@embedify:inline_value datasource="api_config" path="retry.max_attempts" format="text"-->
+<!--@embedoc:end--> seconds |
+| Max Retries | <!--@embedoc:inline_value datasource="api_config" path="retry.max_attempts" format="text"-->
 3
-<!--@embedify:end--> |
+<!--@embedoc:end--> |
 
 ---
 

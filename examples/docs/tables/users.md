@@ -18,7 +18,7 @@ embeds:
 
 ## Column Definitions
 
-<!--@embedify:table_columns id="users"-->
+<!--@embedoc:table_columns id="users"-->
 | Column Name | Type | NOT NULL | Default | Comment |
 | --- | --- | --- | --- | --- |
 | id | integer | ✔ | NULL | User ID |
@@ -26,18 +26,18 @@ embeds:
 | email | varchar(255) | ✔ | NULL | Email address |
 | created_at | timestamp | ✔ | CURRENT_TIMESTAMP | Created at |
 | updated_at | timestamp |  | NULL | Updated at |
-<!--@embedify:end-->
+<!--@embedoc:end-->
 
 ## Table Dependencies
 
-<!--@embedify:table_relations id="users"-->
+<!--@embedoc:table_relations id="users"-->
 ```mermaid
 flowchart LR
   users[("**users**")]
   orders[("orders")]
   orders -->|"user_id"| users
 ```
-<!--@embedify:end-->
+<!--@embedoc:end-->
 
 ## Change History
 

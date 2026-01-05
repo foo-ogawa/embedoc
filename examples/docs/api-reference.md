@@ -7,13 +7,13 @@ embeds:
 ---
 # API Reference
 
-This document demonstrates embedify's capability to embed API documentation from various sources.
+This document demonstrates embedoc's capability to embed API documentation from various sources.
 
 ## OpenAPI Endpoints
 
 The following endpoints are automatically extracted from our OpenAPI specification:
 
-<!--@embedify:openapi_endpoints file="./data/openapi.yaml"-->
+<!--@embedoc:openapi_endpoints file="./data/openapi.yaml"-->
 **Sample API** v1.0.0 (12 endpoints)
 
 | Method | Endpoint | Description | Tags | Auth |
@@ -30,13 +30,13 @@ The following endpoints are automatically extracted from our OpenAPI specificati
 | **DELETE** | `/users/{id}` | Delete user | `Users` | ✔ |
 | **GET** | `/users/{id}` | Get user by ID | `Users` | ✔ |
 | **PUT** | `/users/{id}` | Update user | `Users` | ✔ |
-<!--@embedify:end-->
+<!--@embedoc:end-->
 
 ## API Endpoints (from CSV)
 
 These endpoints are loaded from a CSV datasource:
 
-<!--@embedify:api_endpoints-->
+<!--@embedoc:api_endpoints-->
 | Endpoint | Method | Description | Auth Required |
 | --- | --- | --- | --- |
 | `/api/users` | **GET** | Get list of users | ✔ |
@@ -46,7 +46,7 @@ These endpoints are loaded from a CSV datasource:
 | `/api/users/{id}` | **DELETE** | Delete user | ✔ |
 | `/api/auth/login` | **POST** | Login |  |
 | `/api/auth/logout` | **POST** | Logout | ✔ |
-<!--@embedify:end-->
+<!--@embedoc:end-->
 
 ## Code Examples
 
@@ -54,7 +54,7 @@ These endpoints are loaded from a CSV datasource:
 
 Here's how the `table_columns` embed is implemented:
 
-<!--@embedify:code_snippet file="./embeds/table_columns.ts" start="8" end="25" title="table_columns.ts - Embed Definition"-->
+<!--@embedoc:code_snippet file="./embeds/table_columns.ts" start="8" end="25" title="table_columns.ts - Embed Definition"-->
 **table_columns.ts - Embed Definition**
 
 ```typescript
@@ -79,15 +79,15 @@ export default defineEmbed({
 ```
 
 📄 Source: `./embeds/table_columns.ts` (lines 8-25)
-<!--@embedify:end-->
+<!--@embedoc:end-->
 
 ### Configuration File Example
 
-<!--@embedify:code_snippet file="./embedify.config.yaml" title="embedify.config.yaml"-->
-**embedify.config.yaml**
+<!--@embedoc:code_snippet file="./embedoc.config.yaml" title="embedoc.config.yaml"-->
+**embedoc.config.yaml**
 
 ```yaml
-# embedify configuration file example
+# embedoc configuration file example
 version: "1.0"
 
 # Target files
@@ -136,8 +136,8 @@ output:
 
 ```
 
-📄 Source: `./embedify.config.yaml` (lines full)
-<!--@embedify:end-->
+📄 Source: `./embedoc.config.yaml` (lines full)
+<!--@embedoc:end-->
 
 ## Notes
 

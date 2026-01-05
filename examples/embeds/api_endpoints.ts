@@ -2,9 +2,9 @@
  * api_endpoints Embed
  * Display API endpoints from CSV datasource as a table
  *
- * Usage: <!--@embedify:api_endpoints-->
+ * Usage: <!--@embedoc:api_endpoints-->
  *
- * Requires 'api_endpoints' datasource to be configured in embedify.config.yaml
+ * Requires 'api_endpoints' datasource to be configured in embedoc.config.yaml
  */
 
 import { defineEmbed } from '../../dist/index.js';

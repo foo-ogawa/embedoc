@@ -23,7 +23,7 @@ describe('SqliteDatasource', () => {
   let dbPath: string;
 
   beforeAll(async () => {
-    tempDir = await mkdtemp(join(tmpdir(), 'embedify-test-'));
+    tempDir = await mkdtemp(join(tmpdir(), 'embedoc-test-'));
     dbPath = join(tempDir, 'test.db');
 
     // Create test database
@@ -102,7 +102,7 @@ describe('CsvDatasource', () => {
   let csvPath: string;
 
   beforeAll(async () => {
-    tempDir = await mkdtemp(join(tmpdir(), 'embedify-test-'));
+    tempDir = await mkdtemp(join(tmpdir(), 'embedoc-test-'));
     csvPath = join(tempDir, 'test.csv');
     
     await writeFile(csvPath, `name,age,city
@@ -159,7 +159,7 @@ describe('JsonDatasource', () => {
   let tempDir: string;
 
   beforeAll(async () => {
-    tempDir = await mkdtemp(join(tmpdir(), 'embedify-test-'));
+    tempDir = await mkdtemp(join(tmpdir(), 'embedoc-test-'));
   });
 
   afterAll(async () => {
@@ -221,7 +221,7 @@ describe('YamlDatasource', () => {
   let tempDir: string;
 
   beforeAll(async () => {
-    tempDir = await mkdtemp(join(tmpdir(), 'embedify-test-'));
+    tempDir = await mkdtemp(join(tmpdir(), 'embedoc-test-'));
   });
 
   afterAll(async () => {
@@ -291,7 +291,7 @@ describe('GlobDatasource', () => {
   let tempDir: string;
 
   beforeAll(async () => {
-    tempDir = await mkdtemp(join(tmpdir(), 'embedify-test-'));
+    tempDir = await mkdtemp(join(tmpdir(), 'embedoc-test-'));
     
     // Create test files
     await mkdir(join(tempDir, 'docs'));
@@ -362,7 +362,7 @@ describe('createDatasource factory', () => {
   let tempDir: string;
 
   beforeAll(async () => {
-    tempDir = await mkdtemp(join(tmpdir(), 'embedify-test-'));
+    tempDir = await mkdtemp(join(tmpdir(), 'embedoc-test-'));
     await writeFile(join(tempDir, 'test.json'), '[]');
     await writeFile(join(tempDir, 'test.yaml'), '[]');
     await writeFile(join(tempDir, 'test.csv'), 'name\n');
@@ -416,7 +416,7 @@ describe('initializeDatasources / closeDatasources', () => {
   let tempDir: string;
 
   beforeAll(async () => {
-    tempDir = await mkdtemp(join(tmpdir(), 'embedify-test-'));
+    tempDir = await mkdtemp(join(tmpdir(), 'embedoc-test-'));
     await writeFile(join(tempDir, 'data.json'), '[]');
     await writeFile(join(tempDir, 'data.csv'), 'col\n');
   });

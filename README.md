@@ -1,22 +1,22 @@
-# embedify
+# embedoc
 
-[![npm version](https://badge.fury.io/js/embedify.svg)](https://www.npmjs.com/package/embedify)　[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![npm version](https://badge.fury.io/js/embedoc.svg)](https://www.npmjs.com/package/embedoc)　[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 **In-Place Document Generator** - A tool that auto-updates marker blocks in documents and source code while preserving manually edited sections.
 
 
 ## Overview
 
-embedify provides "In-Place template update" functionality that auto-updates specific blocks (regions enclosed by markers) within documents or source code while preserving manually edited sections.
+embedoc provides "In-Place template update" functionality that auto-updates specific blocks (regions enclosed by markers) within documents or source code while preserving manually edited sections.
 
 ```markdown
 # Manually written heading
 
 This part can be manually edited.
 
-<!--@embedify:table_columns id="users"-->
+<!--@embedoc:table_columns id="users"-->
 (This content is auto-generated)
-<!--@embedify:end-->
+<!--@embedoc:end-->
 
 This part can also be manually edited.
 ```
@@ -29,7 +29,7 @@ This part can also be manually edited.
 - **Multiple Comment Formats**: Supports HTML, block, line, hash, SQL comment formats
 - **Programmable Embeds**: Write marker embedding logic in TypeScript (no compilation required)
 - **Multiple Datasources**: SQLite, CSV, JSON, YAML, and glob support
-- **Inline Datasources**: Define data directly in documents with `@embedify-data` markers
+- **Inline Datasources**: Define data directly in documents with `@embedoc-data` markers
 - **File Generation**: Generate new files in bulk using Handlebars templates
 - **Watch Mode**: Monitor file changes and auto-rebuild with incremental builds
 - **Dependency Tracking**: Automatic dependency graph analysis for efficient rebuilds
@@ -37,11 +37,11 @@ This part can also be manually edited.
 ## Installation
 
 ```bash
-npm install embedify
+npm install embedoc
 # or
-pnpm add embedify
+pnpm add embedoc
 # or
-yarn add embedify
+yarn add embedoc
 ```
 
 ## Quick Start
@@ -49,7 +49,7 @@ yarn add embedify
 ### 1. Create Configuration File
 
 ```yaml
-# embedify.config.yaml
+# embedoc.config.yaml
 version: "1.0"
 
 targets:
@@ -71,7 +71,7 @@ templates_dir: "./templates"
 
 ```typescript
 // embeds/table_columns.ts
-import { defineEmbed } from 'embedify';
+import { defineEmbed } from 'embedoc';
 
 export default defineEmbed({
   dependsOn: ['metadata_db'],
@@ -115,21 +115,21 @@ export const embeds = {
 };
 ```
 
-> **Note**: embedify can directly import TypeScript files, so **no compilation is required**.
+> **Note**: embedoc can directly import TypeScript files, so **no compilation is required**.
 
 ### 3. Add Markers to Your Document
 
 ```markdown
 # Users Table
 
-<!--@embedify:table_columns id="users"-->
-<!--@embedify:end-->
+<!--@embedoc:table_columns id="users"-->
+<!--@embedoc:end-->
 ```
 
 ### 4. Run Build
 
 ```bash
-npx embedify build
+npx embedoc build
 ```
 
 ---
@@ -138,28 +138,28 @@ npx embedify build
 
 ```bash
 # Build all files
-embedify build --config embedify.config.yaml
+embedoc build --config embedoc.config.yaml
 
 # Build specific files only
-embedify build ./path/to/file.md
+embedoc build ./path/to/file.md
 
 # Generate new files (specific datasource)
-embedify generate --datasource tables
+embedoc generate --datasource tables
 
 # Run all datasource generators
-embedify generate --all
+embedoc generate --all
 
 # Watch mode (incremental build)
-embedify watch --config embedify.config.yaml
+embedoc watch --config embedoc.config.yaml
 
 # Debug dependency graph
-embedify watch --debug-deps
+embedoc watch --debug-deps
 
 # Dry run (no file writes)
-embedify build --dry-run
+embedoc build --dry-run
 
 # Verbose output
-embedify build --verbose
+embedoc build --verbose
 ```
 
 ---
@@ -169,7 +169,7 @@ embedify build --verbose
 ### Full Configuration Reference
 
 ```yaml
-# embedify.config.yaml
+# embedoc.config.yaml
 version: "1.0"
 
 # Target files
@@ -287,9 +287,9 @@ github:
 ### Basic Syntax
 
 ```
-{comment_start}@embedify:{embed_name} {attr1}="{value1}" {attr2}="{value2}"{comment_end}
+{comment_start}@embedoc:{embed_name} {attr1}="{value1}" {attr2}="{value2}"{comment_end}
 (auto-generated content)
-{comment_start}@embedify:end{comment_end}
+{comment_start}@embedoc:end{comment_end}
 ```
 
 ### Supported Comment Formats
@@ -306,45 +306,45 @@ github:
 
 **Markdown / HTML**
 ```markdown
-<!--@embedify:table_columns id="users"-->
+<!--@embedoc:table_columns id="users"-->
 | Column | Type | Comment |
 | --- | --- | --- |
 | id | integer | User ID |
-<!--@embedify:end-->
+<!--@embedoc:end-->
 ```
 
 **TypeScript / JavaScript (block)**
 ```typescript
-/*@embedify:type_definition id="User"*/
+/*@embedoc:type_definition id="User"*/
 export interface User {
   id: number;
   name: string;
 }
-/*@embedify:end*/
+/*@embedoc:end*/
 ```
 
 **TypeScript / JavaScript (line)**
 ```typescript
-//@embedify:imports id="api-client"
+//@embedoc:imports id="api-client"
 import { ApiClient } from './api';
 import { UserService } from './services/user';
-//@embedify:end
+//@embedoc:end
 ```
 
 **Python**
 ```python
-#@embedify:constants id="config"
+#@embedoc:constants id="config"
 API_URL = "https://api.example.com"
 TIMEOUT = 30
-#@embedify:end
+#@embedoc:end
 ```
 
 **SQL**
 ```sql
---@embedify:view_definition id="active_users"
+--@embedoc:view_definition id="active_users"
 CREATE VIEW active_users AS
 SELECT * FROM users WHERE status = 'active';
---@embedify:end
+--@embedoc:end
 ```
 
 ### Variable References in Attributes
@@ -359,11 +359,11 @@ schema: "public"
 ```
 
 ```markdown
-<!--@embedify:table_columns id="${doc_id}"-->
-<!--@embedify:end-->
+<!--@embedoc:table_columns id="${doc_id}"-->
+<!--@embedoc:end-->
 
-<!--@embedify:table_info id="${schema}.${doc_id}"-->
-<!--@embedify:end-->
+<!--@embedoc:table_info id="${schema}.${doc_id}"-->
+<!--@embedoc:end-->
 ```
 
 ---
@@ -373,7 +373,7 @@ schema: "public"
 ### Basic Structure
 
 ```typescript
-import { defineEmbed } from 'embedify';
+import { defineEmbed } from 'embedoc';
 
 export default defineEmbed({
   // Datasources this embed depends on (for dependency tracking)
@@ -500,17 +500,17 @@ Returns array of file info objects with `path`, `name`, `ext`, etc.
 
 ## Inline Datasources
 
-Define data directly in documents using `@embedify-data` markers.
+Define data directly in documents using `@embedoc-data` markers.
 
 ### Basic Syntax
 
 ```markdown
-<!--@embedify-data:datasource_name format="yaml"-->
+<!--@embedoc-data:datasource_name format="yaml"-->
 - name: Alice
   age: 25
 - name: Bob
   age: 30
-<!--@embedify-data:end-->
+<!--@embedoc-data:end-->
 ```
 
 ### Supported Formats
@@ -527,43 +527,43 @@ Define data directly in documents using `@embedify-data` markers.
 
 **YAML (default)**
 ```markdown
-<!--@embedify-data:users format="yaml"-->
+<!--@embedoc-data:users format="yaml"-->
 - id: 1
   name: Alice
   email: alice@example.com
 - id: 2
   name: Bob
   email: bob@example.com
-<!--@embedify-data:end-->
+<!--@embedoc-data:end-->
 ```
 
 **JSON**
 ```markdown
-<!--@embedify-data:config format="json"-->
+<!--@embedoc-data:config format="json"-->
 {
   "api_url": "https://api.example.com",
   "timeout": 30
 }
-<!--@embedify-data:end-->
+<!--@embedoc-data:end-->
 ```
 
 **CSV**
 ```markdown
-<!--@embedify-data:endpoints format="csv"-->
+<!--@embedoc-data:endpoints format="csv"-->
 method,path,description
 GET,/users,List all users
 POST,/users,Create user
-<!--@embedify-data:end-->
+<!--@embedoc-data:end-->
 ```
 
 **Markdown Table**
 ```markdown
-<!--@embedify-data:features format="table"-->
+<!--@embedoc-data:features format="table"-->
 | Feature | Status | Priority |
 |---------|--------|----------|
 | Auth    | Done   | High     |
 | API     | WIP    | High     |
-<!--@embedify-data:end-->
+<!--@embedoc-data:end-->
 ```
 
 ### Code Fence Support
@@ -571,7 +571,7 @@ POST,/users,Create user
 For better readability in editors, you can wrap data in code fences:
 
 ````markdown
-<!--@embedify-data:config format="yaml"-->
+<!--@embedoc-data:config format="yaml"-->
 ```yaml
 api_url: https://api.example.com
 timeout: 30
@@ -579,7 +579,7 @@ features:
   - auth
   - logging
 ```
-<!--@embedify-data:end-->
+<!--@embedoc-data:end-->
 ````
 
 Code fences are automatically stripped during parsing.
@@ -589,15 +589,15 @@ Code fences are automatically stripped during parsing.
 Access nested properties using dot notation:
 
 ```markdown
-<!--@embedify-data:project format="yaml"-->
-name: embedify
+<!--@embedoc-data:project format="yaml"-->
+name: embedoc
 version: 1.0.0
 author:
   name: Jane Developer
   email: jane@example.com
 repository:
-  url: https://github.com/janedev/embedify
-<!--@embedify-data:end-->
+  url: https://github.com/janedev/embedoc
+<!--@embedoc-data:end-->
 
 Project: ${project.name} v${project.version}
 Author: ${project.author.name} (${project.author.email})
@@ -610,14 +610,14 @@ Define data inline where it's contextually relevant:
 ```markdown
 # Project Documentation
 
-This project, <!--@embedify-data:project.name-->embedify<!--@embedify-data:end-->, 
-version <!--@embedify-data:project.version-->1.0.0<!--@embedify-data:end-->, 
+This project, <!--@embedoc-data:project.name-->embedoc<!--@embedoc-data:end-->, 
+version <!--@embedoc-data:project.version-->1.0.0<!--@embedoc-data:end-->, 
 provides in-place document generation.
 
 ## Author
 
-Maintained by <!--@embedify-data:project.author.name-->Jane Developer<!--@embedify-data:end-->
-(<!--@embedify-data:project.author.email-->jane@example.com<!--@embedify-data:end-->).
+Maintained by <!--@embedoc-data:project.author.name-->Jane Developer<!--@embedoc-data:end-->
+(<!--@embedoc-data:project.author.email-->jane@example.com<!--@embedoc-data:end-->).
 
 ## Summary
 
@@ -654,7 +654,7 @@ export default defineEmbed({
 ### Inline Datasource Configuration
 
 ```yaml
-# embedify.config.yaml
+# embedoc.config.yaml
 inline_datasource:
   enabled: true              # Enable/disable (default: true)
   maxBytes: 10240           # Max size per block (default: 10KB)
@@ -702,13 +702,13 @@ embeds:
 
 ## Columns
 
-<!--@embedify:table_columns id="{{table_name}}"-->
-<!--@embedify:end-->
+<!--@embedoc:table_columns id="{{table_name}}"-->
+<!--@embedoc:end-->
 
 ## Relations
 
-<!--@embedify:table_relations id="{{table_name}}"-->
-<!--@embedify:end-->
+<!--@embedoc:table_relations id="{{table_name}}"-->
+<!--@embedoc:end-->
 
 Created: {{today}}
 ```
@@ -727,10 +727,10 @@ Created: {{today}}
 
 ```bash
 # Generate for specific datasource
-embedify generate --datasource tables
+embedoc generate --datasource tables
 
 # Generate for all datasources with generators
-embedify generate --all
+embedoc generate --all
 ```
 
 ---
@@ -750,13 +750,13 @@ Document (.md) → Embed (.ts) → Datasource (.db, .csv, .json)
 ### Watch Mode
 
 ```bash
-embedify watch --config embedify.config.yaml
+embedoc watch --config embedoc.config.yaml
 ```
 
 ### Debug Dependency Graph
 
 ```bash
-embedify watch --debug-deps
+embedoc watch --debug-deps
 ```
 
 Example output:
@@ -808,7 +808,7 @@ Frontmatter values can be referenced in marker attributes using `${...}` syntax.
 
 ```
 your-project/
-├── embedify.config.yaml     # Configuration file
+├── embedoc.config.yaml     # Configuration file
 ├── embeds/                  # Embed definitions (TypeScript)
 │   ├── table_columns.ts
 │   ├── table_relations.ts
@@ -847,8 +847,8 @@ export const embeds = {
 
 ```bash
 # Clone repository
-git clone https://github.com/user/embedify.git
-cd embedify
+git clone https://github.com/user/embedoc.git
+cd embedoc
 
 # Install dependencies
 npm install
@@ -897,7 +897,7 @@ import {
   
   // Constants
   DEFAULT_COMMENT_STYLES,
-} from 'embedify';
+} from 'embedoc';
 ```
 
 ### Type Definitions

@@ -2,7 +2,7 @@
  * openapi_endpoints Embed
  * Parse OpenAPI YAML file and display endpoints as a table
  *
- * Usage: <!--@embedify:openapi_endpoints file="openapi.yaml"-->
+ * Usage: <!--@embedoc:openapi_endpoints file="openapi.yaml"-->
  *
  * Parameters:
  *   - file: Path to OpenAPI YAML file (relative to project root)
