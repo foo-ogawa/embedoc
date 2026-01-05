@@ -1,0 +1,134 @@
+openapi: 3.0.3
+info:
+  title: Sample API
+  version: 1.0.0
+  description: A sample API for demonstrating embedify's OpenAPI integration
+
+servers:
+  - url: https://api.example.com/v1
+    description: Production server
+
+paths:
+  /users:
+    get:
+      summary: List all users
+      tags:
+        - Users
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Successful response
+    post:
+      summary: Create a new user
+      tags:
+        - Users
+      security:
+        - bearerAuth: []
+      responses:
+        '201':
+          description: Created
+
+  /users/{id}:
+    get:
+      summary: Get user by ID
+      tags:
+        - Users
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Successful response
+    put:
+      summary: Update user
+      tags:
+        - Users
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Updated
+    delete:
+      summary: Delete user
+      tags:
+        - Users
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Deleted
+
+  /auth/login:
+    post:
+      summary: User login
+      tags:
+        - Authentication
+      responses:
+        '200':
+          description: Login successful
+
+  /auth/logout:
+    post:
+      summary: User logout
+      tags:
+        - Authentication
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Logout successful
+
+  /products:
+    get:
+      summary: List all products
+      tags:
+        - Products
+      responses:
+        '200':
+          description: Successful response
+    post:
+      summary: Create a new product
+      tags:
+        - Products
+      security:
+        - bearerAuth: []
+      responses:
+        '201':
+          description: Created
+
+  /products/{id}:
+    get:
+      summary: Get product by ID
+      tags:
+        - Products
+      responses:
+        '200':
+          description: Successful response
+
+  /orders:
+    get:
+      summary: List all orders
+      tags:
+        - Orders
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Successful response
+    post:
+      summary: Create a new order
+      tags:
+        - Orders
+      security:
+        - bearerAuth: []
+      responses:
+        '201':
+          description: Created
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+

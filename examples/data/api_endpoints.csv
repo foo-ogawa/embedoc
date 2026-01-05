@@ -1,0 +1,8 @@
+endpoint,method,description,auth_required
+/api/users,GET,Get list of users,true
+/api/users/{id},GET,Get specific user,true
+/api/users,POST,Create user,true
+/api/users/{id},PUT,Update user,true
+/api/users/{id},DELETE,Delete user,true
+/api/auth/login,POST,Login,false
+/api/auth/logout,POST,Logout,true

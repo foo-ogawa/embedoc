@@ -1,0 +1,11 @@
+# embedify configuration for self-documentation
+version: "1.0"
+
+targets:
+  - pattern: "./README.md"
+    comment_style: html
+  - pattern: "./docs/**/*.md"
+    comment_style: html
+
+embeds_dir: "./embeds"
+

@@ -1,0 +1,33 @@
+---
+doc_id: "{{table_name}}"
+doc_type: "table"
+schema: "{{schema_name}}"
+embeds:
+  - table_columns
+  - table_relations
+---
+# Table Specification: {{table_name}}
+
+## Overview
+
+| Item | Value |
+|------|-------|
+| Schema | {{schema_name}} |
+| Table Name | {{table_name}} |
+| Description | {{table_comment}} |
+
+## Column Definitions
+
+<!--@embedify:table_columns id="{{table_name}}"-->
+<!--@embedify:end-->
+
+## Table Dependencies
+
+<!--@embedify:table_relations id="{{table_name}}"-->
+<!--@embedify:end-->
+
+## Change History
+
+| Date       | Version | Author  | Description          |
+| ---------- | ------- | ------- | -------------------- |
+| {{today}} | 1.0.0   | -       | Auto-generated from template |
