@@ -7,7 +7,7 @@
  * Requires 'api_endpoints' datasource to be configured in embedoc.config.yaml
  */
 
-import { defineEmbed } from '../../dist/index.js';
+import { defineEmbed } from 'embedoc';
 
 export default defineEmbed({
   dependsOn: ['api_endpoints'],

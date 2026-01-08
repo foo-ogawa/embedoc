@@ -3,7 +3,7 @@
  * Output table column information as a Markdown table
  */
 
-import { defineEmbed } from '../../dist/index.js';
+import { defineEmbed } from 'embedoc';
 
 export default defineEmbed({
   // Datasources this embed depends on

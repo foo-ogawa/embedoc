@@ -95,9 +95,15 @@ export { createMarkdownHelper } from './helpers/markdown.js';
 import type { EmbedDefinition, DefineEmbedFn } from './types/index.js';
 
 /**
- * Helper function to define an embed
+ * Define a custom embed for generating content in documents.
  *
- * @example
+ * Embeds are TypeScript modules that generate content for markers
+ * in your documents. Use this function to create type-safe embed definitions.
+ *
+ * @param definition - The embed definition object
+ * @returns The same definition object (for type inference)
+ *
+ * @example Basic embed
  * ```typescript
  * import { defineEmbed } from 'embedoc';
  *
@@ -105,7 +111,7 @@ import type { EmbedDefinition, DefineEmbedFn } from './types/index.js';
  *   dependsOn: ['metadata_db'],
  *   async render(ctx) {
  *     const { id } = ctx.params;
- *     const data = await ctx.datasources.metadata_db.query(
+ *     const data = await ctx.datasources['metadata_db'].query(
  *       'SELECT * FROM tables WHERE name = ?',
  *       [id]
  *     );
@@ -113,8 +119,54 @@ import type { EmbedDefinition, DefineEmbedFn } from './types/index.js';
  *   }
  * });
  * ```
+ *
+ * @example Embed with multiple datasources
+ * ```typescript
+ * import { defineEmbed } from 'embedoc';
+ *
+ * export default defineEmbed({
+ *   dependsOn: ['users_db', 'config'],
+ *   async render(ctx) {
+ *     const users = await ctx.datasources['users_db'].getAll();
+ *     const config = await ctx.datasources['config'].getAll();
+ *
+ *     return {
+ *       content: ctx.markdown.table(
+ *         ['Name', 'Role'],
+ *         users.map(u => [u.name, u.role])
+ *       )
+ *     };
+ *   }
+ * });
+ * ```
+ *
+ * @example Embed using frontmatter and parameters
+ * ```typescript
+ * import { defineEmbed } from 'embedoc';
+ *
+ * export default defineEmbed({
+ *   async render(ctx) {
+ *     // Access marker parameters: <!--@embedoc:my_embed title="Hello"-->
+ *     const { title } = ctx.params;
+ *
+ *     // Access document frontmatter
+ *     const author = ctx.frontmatter['author'] as string;
+ *
+ *     return {
+ *       content: ctx.markdown.heading(title, 2) + '\n\nBy ' + author
+ *     };
+ *   }
+ * });
+ * ```
+ *
+ * @see {@link EmbedDefinition} for the definition interface
+ * @see {@link EmbedContext} for the context object passed to render
+ * @see {@link MarkdownHelper} for markdown generation utilities
  */
 export const defineEmbed: DefineEmbedFn = (definition: EmbedDefinition) => definition;
 
-// Export alias for documentation consistency
+/**
+ * Alias for {@link defineEmbed}.
+ * @deprecated Use `defineEmbed` instead for consistency.
+ */
 export const defineTemplate = defineEmbed;

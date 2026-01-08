@@ -10,7 +10,7 @@
  *   - format: Output format - text, code, bold, italic (default: text)
  */
 
-import { defineEmbed } from '../../dist/index.js';
+import { defineEmbed } from 'embedoc';
 
 export default defineEmbed({
   async render(ctx) {

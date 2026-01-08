@@ -132,21 +132,116 @@ export interface DetectedComment {
 // =============================================================================
 
 /**
- * Datasource query result
+ * Query result returned from datasource operations.
+ *
+ * An array of records, where each record is an object with string keys
+ * and unknown values. Use type assertions when accessing specific fields.
+ *
+ * @example
+ * ```typescript
+ * const users = await ctx.datasources.db.query('SELECT * FROM users');
+ * users.forEach(user => {
+ *   console.log(user['name'] as string);
+ *   console.log(user['age'] as number);
+ * });
+ * ```
  */
 export type QueryResult = Record<string, unknown>[];
 
 /**
- * Datasource interface
+ * Datasource interface for accessing external data.
+ *
+ * Datasources are configured in `embedoc.config.yaml` and accessed
+ * via `ctx.datasources` in embed render functions.
+ *
+ * **Note**: The `query` option in config is for **generators** (file generation).
+ * In embeds, use `query()` method to execute **dynamic queries with parameters**
+ * from marker attributes or frontmatter.
+ *
+ * Supported datasource types:
+ * - `sqlite` - SQLite database (supports parameterized queries)
+ * - `csv` - CSV files (use `getAll()`)
+ * - `json` - JSON files (use `getAll()`)
+ * - `yaml` - YAML files (use `getAll()`)
+ * - `glob` - File listings (use `getAll()`)
+ *
+ * @example
+ * ```typescript
+ * // In your embed's render function
+ * const ds = ctx.datasources['metadata_db'];
+ *
+ * // SQLite: dynamic query with marker parameters
+ * const { id } = ctx.params;  // From: <!--@embedoc:my_embed id="users"-->
+ * const rows = await ds.query(
+ *   'SELECT * FROM columns WHERE table_name = ?',
+ *   [id]
+ * );
+ *
+ * // CSV/JSON/YAML: get all data
+ * const allData = await ds.getAll();
+ * ```
  */
 export interface Datasource {
-  /** Datasource type */
+  /**
+   * Datasource type identifier.
+   * One of: 'sqlite', 'csv', 'json', 'yaml', 'glob', 'inline'
+   */
   readonly type: string;
-  /** Execute query */
+
+  /**
+   * Execute a parameterized query on the datasource.
+   *
+   * **SQLite**: Execute SQL with parameters from marker attributes or frontmatter.
+   * This allows dynamic filtering based on the document context.
+   *
+   * **CSV/JSON/YAML/Glob**: Parameters are ignored; use `getAll()` instead.
+   *
+   * @param sql - SQL query string with `?` placeholders for parameters
+   * @param params - Values to bind to the placeholders (prevents SQL injection)
+   * @returns Promise resolving to an array of records
+   *
+   * @example
+   * ```typescript
+   * // Dynamic query using marker parameter
+   * const { id } = ctx.params;  // From: <!--@embedoc:table_columns id="users"-->
+   * const columns = await ds.query(
+   *   'SELECT * FROM columns WHERE table_name = ? ORDER BY ordinal_position',
+   *   [id]
+   * );
+   *
+   * // Multiple parameters
+   * const filtered = await ds.query(
+   *   'SELECT * FROM users WHERE status = ? AND role = ?',
+   *   [ctx.params['status'], ctx.params['role']]
+   * );
+   * ```
+   */
   query(sql: string, params?: unknown[]): Promise<QueryResult>;
-  /** Get all data (for generators) */
+
+  /**
+   * Get all data from the datasource.
+   *
+   * Returns all records without filtering. Recommended for
+   * CSV, JSON, YAML, and Glob datasources.
+   *
+   * @returns Promise resolving to an array of all records
+   *
+   * @example
+   * ```typescript
+   * // CSV datasource
+   * const endpoints = await ctx.datasources['api_endpoints'].getAll();
+   *
+   * // JSON datasource
+   * const config = await ctx.datasources['config'].getAll();
+   * ```
+   */
   getAll(): Promise<QueryResult>;
-  /** Close connection */
+
+  /**
+   * @internal
+   * Close the datasource connection.
+   * Called automatically by embedoc - do not call manually.
+   */
   close(): Promise<void>;
 }
 
@@ -160,62 +255,369 @@ export type DatasourceFactory = (config: DatasourceConfig) => Promise<Datasource
 // =============================================================================
 
 /**
- * Markdown helper
+ * Helper interface for generating Markdown content.
+ *
+ * Always available via `ctx.markdown` in embed render functions.
+ * Provides methods for creating common Markdown elements:
+ *
+ * @example
+ * ```typescript
+ * export default defineEmbed({
+ *   async render(ctx) {
+ *     const { markdown } = ctx;
+ *
+ *     // Create a table
+ *     const table = markdown.table(
+ *       ['Name', 'Age'],
+ *       [['Alice', 25], ['Bob', 30]]
+ *     );
+ *
+ *     // Create a list
+ *     const list = markdown.list(['Item 1', 'Item 2'], false);
+ *
+ *     return { content: table + '\n\n' + list };
+ *   }
+ * });
+ * ```
  */
 export interface MarkdownHelper {
-  /** Generate table */
+  /**
+   * Generate a Markdown table.
+   *
+   * @param headers - Array of column header strings
+   * @param rows - 2D array of cell values (each inner array is a row)
+   * @returns Formatted Markdown table string
+   *
+   * @example
+   * ```typescript
+   * ctx.markdown.table(
+   *   ['Column', 'Type', 'Description'],
+   *   [
+   *     ['id', 'integer', 'Primary key'],
+   *     ['name', 'varchar', 'User name'],
+   *   ]
+   * );
+   * // Output:
+   * // | Column | Type | Description |
+   * // | --- | --- | --- |
+   * // | id | integer | Primary key |
+   * // | name | varchar | User name |
+   * ```
+   */
   table(headers: string[], rows: (string | number | boolean | null | undefined)[][]): string;
-  /** Generate list */
+
+  /**
+   * Generate a Markdown list.
+   *
+   * @param items - Array of list item strings
+   * @param ordered - If true, creates numbered list; if false, creates bullet list
+   * @returns Formatted Markdown list string
+   *
+   * @example
+   * ```typescript
+   * // Unordered list
+   * ctx.markdown.list(['Apple', 'Banana', 'Cherry'], false);
+   * // Output:
+   * // - Apple
+   * // - Banana
+   * // - Cherry
+   *
+   * // Ordered list
+   * ctx.markdown.list(['First', 'Second', 'Third'], true);
+   * // Output:
+   * // 1. First
+   * // 2. Second
+   * // 3. Third
+   * ```
+   */
   list(items: string[], ordered?: boolean): string;
-  /** Generate code block */
+
+  /**
+   * Generate a fenced code block.
+   *
+   * @param code - The code content
+   * @param language - Optional language identifier for syntax highlighting
+   * @returns Formatted Markdown code block string
+   *
+   * @example
+   * ```typescript
+   * ctx.markdown.codeBlock('const x = 1;', 'typescript');
+   * // Output:
+   * // ```typescript
+   * // const x = 1;
+   * // ```
+   * ```
+   */
   codeBlock(code: string, language?: string): string;
-  /** Generate link */
+
+  /**
+   * Generate a Markdown link.
+   *
+   * @param text - Link display text
+   * @param url - Link URL
+   * @returns Formatted Markdown link string
+   *
+   * @example
+   * ```typescript
+   * ctx.markdown.link('Visit Google', 'https://google.com');
+   * // Output: [Visit Google](https://google.com)
+   * ```
+   */
   link(text: string, url: string): string;
-  /** Generate heading */
+
+  /**
+   * Generate a Markdown heading.
+   *
+   * @param text - Heading text
+   * @param level - Heading level (1-6), defaults to 1
+   * @returns Formatted Markdown heading string
+   *
+   * @example
+   * ```typescript
+   * ctx.markdown.heading('Section Title', 2);
+   * // Output: ## Section Title
+   * ```
+   */
   heading(text: string, level?: number): string;
-  /** Bold text */
+
+  /**
+   * Wrap text in bold formatting.
+   *
+   * @param text - Text to make bold
+   * @returns Bold formatted string
+   *
+   * @example
+   * ```typescript
+   * ctx.markdown.bold('Important');
+   * // Output: **Important**
+   * ```
+   */
   bold(text: string): string;
-  /** Italic text */
+
+  /**
+   * Wrap text in italic formatting.
+   *
+   * @param text - Text to make italic
+   * @returns Italic formatted string
+   *
+   * @example
+   * ```typescript
+   * ctx.markdown.italic('Emphasis');
+   * // Output: *Emphasis*
+   * ```
+   */
   italic(text: string): string;
-  /** Checkbox */
+
+  /**
+   * Generate a checkbox character.
+   *
+   * @param checked - Whether the checkbox is checked
+   * @returns Checkbox character ('✔' if checked, '' if not)
+   *
+   * @example
+   * ```typescript
+   * ctx.markdown.checkbox(true);   // Output: ✔
+   * ctx.markdown.checkbox(false);  // Output: (empty string)
+   * ```
+   */
   checkbox(checked: boolean): string;
 }
 
 /**
- * Embed context
+ * Context object passed to an embed's render function.
+ *
+ * Provides access to:
+ * - Marker parameters from the document
+ * - Document frontmatter data
+ * - Configured datasources
+ * - Markdown generation helpers
+ * - Current file path
+ *
+ * @example
+ * ```typescript
+ * export default defineEmbed({
+ *   dependsOn: ['metadata_db'],
+ *   async render(ctx) {
+ *     // Access marker parameters
+ *     const { id } = ctx.params;  // From: <!--@embedoc:my_embed id="users"-->
+ *
+ *     // Access frontmatter
+ *     const docType = ctx.frontmatter['doc_type'];
+ *
+ *     // Query datasource
+ *     const data = await ctx.datasources['metadata_db'].query(
+ *       'SELECT * FROM tables WHERE name = ?',
+ *       [id]
+ *     );
+ *
+ *     // Generate markdown
+ *     return { content: ctx.markdown.table(['Name'], data.map(r => [r.name])) };
+ *   }
+ * });
+ * ```
  */
 export interface EmbedContext {
-  /** Marker parameters */
+  /**
+   * Parameters from the marker attributes.
+   *
+   * Parsed from the marker syntax:
+   * `<!--@embedoc:embed_name param1="value1" param2="value2"-->`
+   *
+   * Variable references (`${...}`) are resolved before passing to the embed.
+   *
+   * @example
+   * ```typescript
+   * // Marker: <!--@embedoc:table_columns id="users" schema="public"-->
+   * const { id, schema } = ctx.params;
+   * // id = "users", schema = "public"
+   * ```
+   */
   params: Record<string, string>;
-  /** Frontmatter properties */
+
+  /**
+   * Frontmatter data from the document.
+   *
+   * Parsed from YAML frontmatter at the top of the document.
+   *
+   * @example
+   * ```typescript
+   * // Document frontmatter:
+   * // ---
+   * // doc_id: "users"
+   * // schema: "public"
+   * // ---
+   *
+   * const docId = ctx.frontmatter['doc_id'] as string;
+   * ```
+   */
   frontmatter: Record<string, unknown>;
-  /** Datasource access */
+
+  /**
+   * Map of configured datasources.
+   *
+   * Keys are datasource names from `embedoc.config.yaml`.
+   * Includes both external datasources and inline datasources
+   * defined in the document.
+   *
+   * @example
+   * ```typescript
+   * // Access SQLite datasource
+   * const db = ctx.datasources['metadata_db'];
+   * const rows = await db.query('SELECT * FROM users');
+   *
+   * // Access inline datasource
+   * const config = ctx.datasources['project_config'];
+   * const data = await config.getAll();
+   * ```
+   */
   datasources: Record<string, Datasource>;
-  /** Markdown helper */
+
+  /**
+   * Markdown generation helper.
+   *
+   * Always available. Provides methods for creating tables, lists,
+   * code blocks, links, and other Markdown elements.
+   *
+   * @see {@link MarkdownHelper}
+   */
   markdown: MarkdownHelper;
-  /** Current file path being processed */
+
+  /**
+   * Absolute path to the current file being processed.
+   *
+   * Useful for generating relative links or file references.
+   *
+   * @example
+   * ```typescript
+   * const dir = path.dirname(ctx.filePath);
+   * const relativePath = path.relative(dir, targetFile);
+   * ```
+   */
   filePath: string;
 }
 
 /**
- * Embed execution result
+ * Result object returned from an embed's render function.
+ *
+ * @example
+ * ```typescript
+ * export default defineEmbed({
+ *   async render(ctx): Promise<EmbedResult> {
+ *     return { content: '# Generated Content\n\nHello, World!' };
+ *   }
+ * });
+ * ```
  */
 export interface EmbedResult {
+  /**
+   * Generated content to insert between the markers.
+   *
+   * This string replaces the existing content between
+   * the start and end markers in the document.
+   */
   content: string;
 }
 
 /**
- * Embed definition
+ * Embed definition interface.
+ *
+ * Use with {@link defineEmbed} to create custom embeds.
+ * Embeds are TypeScript modules that generate content
+ * for markers in your documents.
+ *
+ * @example
+ * ```typescript
+ * import { defineEmbed } from 'embedoc';
+ *
+ * export default defineEmbed({
+ *   // Declare datasource dependencies for incremental builds
+ *   dependsOn: ['metadata_db'],
+ *
+ *   // Render function generates the content
+ *   async render(ctx) {
+ *     const { id } = ctx.params;
+ *     const data = await ctx.datasources['metadata_db'].query(
+ *       'SELECT * FROM users WHERE id = ?',
+ *       [id]
+ *     );
+ *     return {
+ *       content: ctx.markdown.table(['Name', 'Email'], data.map(r => [r.name, r.email]))
+ *     };
+ *   }
+ * });
+ * ```
  */
 export interface EmbedDefinition {
-  /** Dependent datasource names */
+  /**
+   * List of datasource names this embed depends on.
+   *
+   * Used for dependency tracking in incremental builds.
+   * When a datasource changes, all documents using embeds
+   * that depend on it will be rebuilt.
+   *
+   * @example
+   * ```typescript
+   * dependsOn: ['metadata_db', 'api_endpoints']
+   * ```
+   */
   dependsOn?: string[];
-  /** Render function */
+
+  /**
+   * Render function that generates the embed content.
+   *
+   * Called for each marker in the document that references this embed.
+   * Receives the context object with parameters, datasources, and helpers.
+   *
+   * @param ctx - The embed context
+   * @returns Promise resolving to the embed result with generated content
+   */
   render(ctx: EmbedContext): Promise<EmbedResult>;
 }
 
 /**
- * Helper function type for embed definition
+ * Helper function type for defining embeds.
+ *
+ * Used internally by {@link defineEmbed}.
  */
 export type DefineEmbedFn = (definition: EmbedDefinition) => EmbedDefinition;
 

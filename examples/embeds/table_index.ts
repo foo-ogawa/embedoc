@@ -3,7 +3,7 @@
  * Output table list with links
  */
 
-import { defineEmbed } from '../../dist/index.js';
+import { defineEmbed } from 'embedoc';
 
 export default defineEmbed({
   dependsOn: ['metadata_db'],

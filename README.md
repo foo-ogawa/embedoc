@@ -872,6 +872,8 @@ npm test
 
 ## API Reference
 
+> 📖 **See [docs/api/README.md](./docs/api/README.md) for detailed Embed API documentation.**
+
 ### Exported Functions
 
 ```typescript

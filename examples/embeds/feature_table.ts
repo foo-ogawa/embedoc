@@ -8,7 +8,7 @@
  *   - datasource: Name of the inline datasource containing features array
  */
 
-import { defineEmbed } from '../../dist/index.js';
+import { defineEmbed } from 'embedoc';
 
 interface Feature {
   name: string;

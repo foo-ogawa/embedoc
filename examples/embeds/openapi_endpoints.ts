@@ -9,7 +9,7 @@
  *   - tag: Filter by tag (optional)
  */
 
-import { defineEmbed } from '../../dist/index.js';
+import { defineEmbed } from 'embedoc';
 import fs from 'node:fs';
 import path from 'node:path';
 import yaml from 'js-yaml';
