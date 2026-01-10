@@ -64,8 +64,12 @@ async function loadEmbeds(
     // First try TypeScript file
     if (await fileExists(tsIndexPath)) {
       // Use tsx to directly import TypeScript
-      const module = await tsImport(tsIndexPath, import.meta.url) as { embeds?: Record<string, EmbedDefinition> };
-      return module.embeds ?? {};
+      // tsImport may return { default: { embeds: ... } } or { embeds: ... }
+      const module = await tsImport(tsIndexPath, import.meta.url) as { 
+        embeds?: Record<string, EmbedDefinition>;
+        default?: { embeds?: Record<string, EmbedDefinition> };
+      };
+      return module.embeds ?? module.default?.embeds ?? {};
     }
 
     // Fall back to JavaScript
