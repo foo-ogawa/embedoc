@@ -347,6 +347,18 @@ SELECT * FROM users WHERE status = 'active';
 --@embedoc:end
 ```
 
+### Inline Mode
+
+Use `inline="true"` to prevent newlines around the generated content. Useful for embedding values within table cells or inline text:
+
+```markdown
+| Name | Value |
+|------|-------|
+| User | <!--@embedoc:inline_value datasource="data" path="name" inline="true"-->John<!--@embedoc:end--> |
+```
+
+Without `inline="true"`, the output would include newlines and break the table formatting.
+
 ### Variable References in Attributes
 
 Use `${...}` syntax in attribute values to reference Frontmatter properties or inline datasources.
@@ -635,10 +647,11 @@ Both YAML blocks and dot-path definitions produce the same structure and can be 
 ### Using Inline Datasources in Embeds
 
 ```typescript
+import { defineEmbed, InlineDatasource } from 'embedoc';
+
 export default defineEmbed({
   async render(ctx) {
-    const datasourceName = ctx.params['datasource'];
-    const ds = ctx.datasources[datasourceName];
+    const ds = ctx.datasources['my_data'] as InlineDatasource;
     
     // Get all data
     const data = await ds.getAll();
@@ -646,10 +659,23 @@ export default defineEmbed({
     // Get nested value (for object datasources)
     const authorName = await ds.get('author.name');
     
+    // Get location metadata (for traceability)
+    const meta = ds.getMeta('', ctx.filePath);  // '' = root definition
+    if (meta) {
+      // meta.relativePath: relative path from current document
+      // meta.contentStartLine / contentEndLine: line numbers
+      console.log(`Defined at ${meta.relativePath}:${meta.contentStartLine}`);
+    }
+    
+    // Get location of specific property (for distributed definitions)
+    const propMeta = ds.getMeta('author.name', ctx.filePath);
+    
     return { content: ctx.markdown.table(/* ... */) };
   }
 });
 ```
+
+See [API Reference](./docs/api/README.md#inlinedatasource) for `InlineDatasource` details.
 
 ### Inline Datasource Configuration
 
@@ -921,8 +947,27 @@ interface EmbedContext {
 interface Datasource {
   query(sql: string, params?: unknown[]): Promise<QueryResult>;
   getAll(): Promise<QueryResult>;
-  get?(path: string): Promise<unknown>;  // For inline datasources
   close(): Promise<void>;
+}
+
+interface InlineDatasource extends Datasource {
+  readonly type: 'inline';
+  readonly format: string;
+  readonly locations: InlineDefinitionLocation[];
+  get(path: string): Promise<unknown>;
+  getMeta(propertyPath?: string, targetDocPath?: string): InlineDefinitionLocation | null;
+  getAllMeta(targetDocPath?: string): InlineDefinitionLocation[];
+}
+
+interface InlineDefinitionLocation {
+  propertyPath: string;
+  absolutePath: string;
+  relativePath: string;
+  startLine: number;
+  endLine: number;
+  contentStartLine: number;
+  contentEndLine: number;
+  format: string;
 }
 
 interface InlineDatasourceConfig {

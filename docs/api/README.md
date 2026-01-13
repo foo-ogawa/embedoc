@@ -141,6 +141,94 @@ const filtered = await ds.query(
 
 ***
 
+### InlineDatasource
+
+Defined in: core/inline-datasource.ts
+
+Extended datasource class for document-local data defined with `@embedoc-data` markers.
+Inherits from [Datasource](#datasource) and adds location metadata access.
+
+#### Properties
+
+| Property | Type | Description |
+| ------ | ------ | ------ |
+| `type` | `'inline'` | Always `'inline'` for this datasource type |
+| `format` | `string` | Data format: `'yaml'`, `'json'`, `'csv'`, `'table'`, or `'text'` |
+| `locations` | `InlineDefinitionLocation[]` | All definition locations (sorted by property path) |
+
+#### Methods
+
+##### getMeta()
+
+```ts
+getMeta(propertyPath?: string, targetDocPath?: string): InlineDefinitionLocation | null;
+```
+
+Get location metadata for a specific property definition.
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `propertyPath` | `string` | Property path to look up (default: `''` for root) |
+| `targetDocPath` | `string` | Base path for relative path calculation |
+
+Returns `null` if the specified property has no direct definition.
+
+##### getAllMeta()
+
+```ts
+getAllMeta(targetDocPath?: string): InlineDefinitionLocation[];
+```
+
+Get all definition locations with relative paths calculated.
+
+##### get()
+
+```ts
+get(path: string): Promise<unknown>;
+```
+
+Get value at a dot-path within the datasource data.
+
+#### InlineDefinitionLocation
+
+| Property | Type | Description |
+| ------ | ------ | ------ |
+| `propertyPath` | `string` | Property path (`''` for root definition) |
+| `absolutePath` | `string` | Absolute file path |
+| `relativePath` | `string` | Relative path from target document |
+| `startLine` | `number` | Marker start line (1-indexed) |
+| `endLine` | `number` | Marker end line |
+| `contentStartLine` | `number` | Content start line (excluding marker) |
+| `contentEndLine` | `number` | Content end line (excluding marker) |
+| `format` | `string` | Data format |
+
+#### Example
+
+```typescript
+import { defineEmbed, InlineDatasource } from 'embedoc';
+
+export default defineEmbed({
+  async render(ctx) {
+    const ds = ctx.datasources['project'] as InlineDatasource;
+    
+    // Root definition location
+    const root = ds.getMeta('', ctx.filePath);
+    
+    // Specific property location (for distributed definitions)
+    const author = ds.getMeta('author.name', ctx.filePath);
+    
+    if (root) {
+      return {
+        content: `Defined in ${root.relativePath}:${root.contentStartLine}`
+      };
+    }
+    return { content: 'No root definition' };
+  }
+});
+```
+
+***
+
 ### EmbedContext
 
 Defined in: types/index.ts:459

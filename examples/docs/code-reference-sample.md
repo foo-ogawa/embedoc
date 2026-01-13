@@ -3,51 +3,101 @@ title: "Code Reference Sample with Inline Datasources"
 ---
 # Code Reference Sample
 
-This document demonstrates using inline datasources to manage code references. Define source file locations as data, then reference them in code snippets.
+This document demonstrates two approaches for code references:
 
-## Source Files Definition
-
-<!--@embedoc-data:sources format="yaml"-->
-```
-embeds:
-  table_columns:
-    file: ./embeds/table_columns.ts
-    description: Table columns embed implementation
-  code_snippet:
-    file: ./embeds/code_snippet.ts
-    description: Code snippet embed implementation
-  openapi_endpoints:
-    file: ./embeds/openapi_endpoints.ts
-    description: OpenAPI endpoints embed
-config:
-  main:
-    file: ./embedoc.config.yaml
-    description: Main configuration file
-```
-<!--@embedoc-data:end-->
+1. **Traditional**: External file with line numbers (may break when code changes)
+2. **Inline Datasource**: Define code inline with automatic location tracking (robust)
 
 ---
 
-## Code Snippets
+## Inline Datasource Approach (Recommended)
 
-### 1. Table Columns Embed
+Define code snippets as inline datasources. Line numbers are automatically tracked, so references stay accurate even when surrounding content changes.
 
-**File**: <!--@embedoc:inline_value datasource="sources" path="embeds.table_columns.file" format="code"-->
-`./embeds/table_columns.ts`
+### Example: Helper Function
+
+<!--@embedoc-data:helper_function format="text"-->
+```typescript
+export function calculateSum(a: number, b: number): number {
+  return a + b;
+}
+
+export function calculateProduct(a: number, b: number): number {
+  return a * b;
+}
+```
+<!--@embedoc-data:end-->
+
+**Rendered with automatic location tracking:**
+
+<!--@embedoc:code_snippet datasource="helper_function" lang="typescript" title="Math Helper Functions"-->
+**Math Helper Functions**
+
+```typescript
+export function calculateSum(a: number, b: number): number {
+  return a + b;
+}
+
+export function calculateProduct(a: number, b: number): number {
+  return a * b;
+}
+```
+
+📄 Source: `./code-reference-sample.md` (lines 20-28)
 <!--@embedoc:end-->
 
-**Description**: <!--@embedoc:inline_value datasource="sources" path="embeds.table_columns.description" format="text"-->
-Table columns embed implementation
+### Example: API Interface Definition
+
+<!--@embedoc-data:api_interface format="text"-->
+```typescript
+interface ApiResponse<T> {
+  success: boolean;
+  data?: T;
+  error?: {
+    code: string;
+    message: string;
+  };
+}
+```
+<!--@embedoc-data:end-->
+
+<!--@embedoc:code_snippet datasource="api_interface" lang="typescript" title="API Response Interface"-->
+**API Response Interface**
+
+```typescript
+interface ApiResponse<T> {
+  success: boolean;
+  data?: T;
+  error?: {
+    code: string;
+    message: string;
+  };
+}
+```
+
+📄 Source: `./code-reference-sample.md` (lines 52-61)
 <!--@embedoc:end-->
 
-<!--@embedoc:code_snippet file="./embeds/table_columns.ts" start="1" end="25" lang="typescript"-->
+---
+
+## External File Approach (Traditional)
+
+Reference code from external files with explicit line numbers.
+
+> ⚠️ **Note**: If the source file is edited, line numbers may become stale.
+
+### Table Columns Embed
+
+<!--@embedoc:code_snippet file="./embeds/table_columns.ts" start="1" end="20" lang="typescript" title="Table Columns Embed"-->
+**Table Columns Embed**
+
 ```typescript
 /**
  * table_columns Embed
  * Output table column information as a Markdown table
  */
 
-import { defineEmbed } from '../../dist/index.js';
+import { defineEmbed } from 'embedoc';
 
 export default defineEmbed({
   // Datasources this embed depends on
@@ -62,177 +112,39 @@ export default defineEmbed({
     }
 
     // Get column information from datasource
-    const columns = await ctx.datasources['metadata_db']!.query(
-      `SELECT * FROM columns WHERE table_name = ? ORDER BY ordinal_position`,
-      [id]
-    );
-
 ```
 
-📄 Source: `./embeds/table_columns.ts` (lines 1-25)
+📄 Source: `./embeds/table_columns.ts` (lines 1-20)
 <!--@embedoc:end-->
 
 ---
 
-### 2. Code Snippet Embed
+## Distributed Definition Example
 
-**File**: <!--@embedoc:inline_value datasource="sources" path="embeds.code_snippet.file" format="code"-->
-`./embeds/code_snippet.ts`
-<!--@embedoc:end-->
+You can also define data properties inline throughout the document:
 
-**Description**: <!--@embedoc:inline_value datasource="sources" path="embeds.code_snippet.description" format="text"-->
-Code snippet embed implementation
-<!--@embedoc:end-->
+Project name: <!--@embedoc-data:project.name-->embedoc-examples<!--@embedoc-data:end-->
 
-<!--@embedoc:code_snippet file="./embeds/code_snippet.ts" start="14" end="45" lang="typescript" title="File reading and line extraction"-->
-**File reading and line extraction**
+Version: <!--@embedoc-data:project.version-->1.0.0<!--@embedoc-data:end-->
 
-```typescript
+Description: <!--@embedoc-data:project.description-->Example code snippets with inline datasources<!--@embedoc-data:end-->
 
-import { defineEmbed } from '../../dist/index.js';
-import fs from 'node:fs';
-import path from 'node:path';
+**Generated summary:**
 
-export default defineEmbed({
-  async render(ctx) {
-    const filePath = ctx.params['file'];
-    const startLine = parseInt(ctx.params['start'] || '1', 10);
-    const endLine = ctx.params['end'] ? parseInt(ctx.params['end'], 10) : undefined;
-    const lang = ctx.params['lang'] || detectLanguage(filePath);
-    const title = ctx.params['title'];
-
-    if (!filePath) {
-      return { content: '⚠️ `file` parameter is required' };
-    }
-
-    // Resolve file path relative to project root (where embedoc.config.yaml is)
-    const resolvedPath = path.resolve(process.cwd(), filePath);
-
-    if (!fs.existsSync(resolvedPath)) {
-      return { content: `⚠️ File not found: ${filePath}` };
-    }
-
-    const content = fs.readFileSync(resolvedPath, 'utf-8');
-    const lines = content.split('\n');
-
-    // Extract specified line range
-    const start = Math.max(1, startLine) - 1; // Convert to 0-based index
-    const end = endLine ? Math.min(endLine, lines.length) : lines.length;
-    const snippet = lines.slice(start, end).join('\n');
-
-```
-
-📄 Source: `./embeds/code_snippet.ts` (lines 14-45)
-<!--@embedoc:end-->
-
----
-
-### 3. OpenAPI Endpoints Embed
-
-**File**: <!--@embedoc:inline_value datasource="sources" path="embeds.openapi_endpoints.file" format="code"-->
-`./embeds/openapi_endpoints.ts`
-<!--@embedoc:end-->
-
-**Description**: <!--@embedoc:inline_value datasource="sources" path="embeds.openapi_endpoints.description" format="text"-->
-OpenAPI endpoints embed
-<!--@embedoc:end-->
-
-<!--@embedoc:code_snippet file="./embeds/openapi_endpoints.ts" start="30" end="55" lang="typescript" title="OpenAPI parsing logic"-->
-**OpenAPI parsing logic**
-
-```typescript
-        tags?: string[];
-        operationId?: string;
-        security?: Array<Record<string, string[]>>;
-      }
-    >
-  >;
-}
-
-export default defineEmbed({
-  async render(ctx) {
-    const filePath = ctx.params['file'];
-    const tagFilter = ctx.params['tag'];
-
-    if (!filePath) {
-      return { content: '⚠️ `file` parameter is required' };
-    }
-
-    // Resolve file path relative to project root
-    const resolvedPath = path.resolve(process.cwd(), filePath);
-
-    if (!fs.existsSync(resolvedPath)) {
-      return { content: `⚠️ File not found: ${filePath}` };
-    }
-
-    const content = fs.readFileSync(resolvedPath, 'utf-8');
-    let spec: OpenAPISpec;
-```
-
-📄 Source: `./embeds/openapi_endpoints.ts` (lines 30-55)
-<!--@embedoc:end-->
-
----
-
-## Configuration Reference
-
-**File**: <!--@embedoc:inline_value datasource="sources" path="config.main.file" format="code"-->
-`./embedoc.config.yaml`
-<!--@embedoc:end-->
-
-**Description**: <!--@embedoc:inline_value datasource="sources" path="config.main.description" format="text"-->
-Main configuration file
-<!--@embedoc:end-->
-
-<!--@embedoc:code_snippet file="./embedoc.config.yaml" start="1" end="30" lang="yaml" title="embedoc.config.yaml"-->
-**embedoc.config.yaml**
-
-```yaml
-# embedoc configuration file example
-version: "1.0"
-
-# Target files
-targets:
-  - pattern: "./docs/**/*.md"
-    comment_style: html
-    exclude:
-      - "**/node_modules/**"
-      - "**/.git/**"
-  - pattern: "./src/**/*.ts"
-    comment_style: block
-
-# Datasource definitions
-datasources:
-  # Datasource with schema (for generators)
-  tables:
-    type: sqlite
-    path: "./data/sample.db"
-    query: "SELECT * FROM tables"
-    generators:
-      - output_path: "./docs/tables/{table_name}.md"
-        template: table_doc.hbs
-        overwrite: false
-
-  # Connection datasource (for templates)
-  metadata_db:
-    type: sqlite
-    path: "./data/sample.db"
-
-```
-
-📄 Source: `./embedoc.config.yaml` (lines 1-30)
-<!--@embedoc:end-->
+| Property | Value |
+|----------|-------|
+| Name | <!--@embedoc:inline_value datasource="project" path="name" format="text" inline="true"-->embedoc-examples<!--@embedoc:end--> |
+| Version | <!--@embedoc:inline_value datasource="project" path="version" format="code" inline="true"-->`1.0.0`<!--@embedoc:end--> |
+| Description | <!--@embedoc:inline_value datasource="project" path="description" format="text" inline="true"-->Example code snippets with inline datasources<!--@embedoc:end--> |
 
 ---
 
 ## Summary
 
-This document demonstrates:
+| Approach | Pros | Cons |
+|----------|------|------|
+| **Inline Datasource** | Line numbers auto-update, self-contained | Code duplicated in document |
+| **External File** | Single source of truth | Line numbers may become stale |
 
-1. **Centralized Source Definitions**: Define all source file paths in one inline datasource
-2. **Metadata Display**: Show file paths and descriptions using `inline_value` embed
-3. **Code Snippets**: Display actual code from referenced files
-4. **Maintainability**: When file paths change, update only the datasource definition
-
-The inline datasource acts as a **Single Source of Truth** for file references, making documentation easier to maintain.
+**Best Practice**: Use inline datasources for small, critical code snippets that must stay synchronized with documentation. Use external file references for larger code sections where line drift is acceptable.
 

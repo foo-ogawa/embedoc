@@ -4,6 +4,7 @@
  */
 
 import yaml from 'js-yaml';
+import path from 'node:path';
 import type { Datasource, QueryResult } from '../types/index.js';
 
 /**
@@ -22,6 +23,28 @@ export interface ParsedInlineData {
   endLine: number;
   /** Byte size of content */
   byteSize: number;
+}
+
+/**
+ * Location metadata for an inline definition
+ */
+export interface InlineDefinitionLocation {
+  /** Property path ('' for root definition) */
+  propertyPath: string;
+  /** Absolute file path */
+  absolutePath: string;
+  /** Relative path from target document (calculated on access) */
+  relativePath: string;
+  /** Marker start line (1-indexed) */
+  startLine: number;
+  /** Marker end line */
+  endLine: number;
+  /** Content start line (excluding marker) */
+  contentStartLine: number;
+  /** Content end line (excluding marker) */
+  contentEndLine: number;
+  /** Data format */
+  format: string;
 }
 
 /**
@@ -280,6 +303,16 @@ function parseMarkdownTable(content: string): QueryResult {
 }
 
 /**
+ * Internal location data (without relativePath calculation)
+ */
+interface InternalLocation {
+  propertyPath: string;
+  startLine: number;
+  endLine: number;
+  format: string;
+}
+
+/**
  * Inline Datasource class
  */
 export class InlineDatasource implements Datasource {
@@ -293,6 +326,9 @@ export class InlineDatasource implements Datasource {
   /** Internal data - exposed for variable resolution */
   readonly data: unknown;
   private _isObject: boolean;
+  
+  /** Internal location storage (sorted by propertyPath) */
+  private _locations: InternalLocation[];
 
   constructor(
     data: unknown,
@@ -300,7 +336,8 @@ export class InlineDatasource implements Datasource {
     documentPath: string,
     startLine: number,
     endLine: number,
-    byteSize: number
+    byteSize: number,
+    locations: InternalLocation[] = []
   ) {
     this.data = data;
     this.format = format;
@@ -309,6 +346,12 @@ export class InlineDatasource implements Datasource {
     this.endLine = endLine;
     this.byteSize = byteSize;
     this._isObject = !Array.isArray(data) && typeof data === 'object' && data !== null;
+    // Sort locations by propertyPath ('' first, then alphabetical)
+    this._locations = [...locations].sort((a, b) => {
+      if (a.propertyPath === '') return -1;
+      if (b.propertyPath === '') return 1;
+      return a.propertyPath.localeCompare(b.propertyPath);
+    });
   }
 
   /**
@@ -345,8 +388,8 @@ export class InlineDatasource implements Datasource {
   /**
    * Get value at dot-path
    */
-  async get(path: string): Promise<unknown> {
-    return resolveDotPath(this.data, path);
+  async get(dotPath: string): Promise<unknown> {
+    return resolveDotPath(this.data, dotPath);
   }
 
   /**
@@ -366,11 +409,68 @@ export class InlineDatasource implements Datasource {
   /**
    * Merge another value into this datasource at a path
    */
-  merge(path: string, value: unknown): void {
+  merge(dotPath: string, value: unknown): void {
     if (!this._isObject) {
       throw new Error('Cannot merge into array datasource');
     }
-    setDotPath(this.data as Record<string, unknown>, path, value);
+    setDotPath(this.data as Record<string, unknown>, dotPath, value);
+  }
+
+  /**
+   * Get location metadata for a specific property definition
+   * @param propertyPath - Property path to look up (default: '' for root)
+   * @param targetDocPath - Base path for relative path calculation
+   * @returns Location metadata or null if not found
+   */
+  getMeta(propertyPath: string = '', targetDocPath?: string): InlineDefinitionLocation | null {
+    const loc = this._locations.find(l => l.propertyPath === propertyPath);
+    if (!loc) return null;
+    
+    return this._buildLocation(loc, targetDocPath);
+  }
+
+  /**
+   * Get all definition locations with relative paths calculated
+   * @param targetDocPath - Base path for relative path calculation
+   * @returns Array of all definition locations (sorted by propertyPath)
+   */
+  getAllMeta(targetDocPath?: string): InlineDefinitionLocation[] {
+    return this._locations.map(loc => this._buildLocation(loc, targetDocPath));
+  }
+
+  /**
+   * Get the locations array (read-only access for inspection)
+   */
+  get locations(): readonly InternalLocation[] {
+    return this._locations;
+  }
+
+  /**
+   * Build full location object with relativePath calculation
+   */
+  private _buildLocation(loc: InternalLocation, targetDocPath?: string): InlineDefinitionLocation {
+    let relativePath = this.documentPath;
+    if (targetDocPath) {
+      const targetDir = path.dirname(targetDocPath);
+      relativePath = path.relative(targetDir, this.documentPath);
+      // Ensure forward slashes for consistency
+      relativePath = relativePath.replace(/\\/g, '/');
+      // Add ./ prefix if not starting with . or /
+      if (!relativePath.startsWith('.') && !relativePath.startsWith('/')) {
+        relativePath = './' + relativePath;
+      }
+    }
+
+    return {
+      propertyPath: loc.propertyPath,
+      absolutePath: this.documentPath,
+      relativePath,
+      startLine: loc.startLine,
+      endLine: loc.endLine,
+      contentStartLine: loc.startLine + 1,
+      contentEndLine: loc.endLine - 1,
+      format: loc.format,
+    };
   }
 }
 
@@ -426,6 +526,9 @@ export function buildInlineDatasources(
     let startLine = 0;
     let endLine = 0;
     let byteSize = 0;
+    
+    // Collect location information for each definition
+    const locations: InternalLocation[] = [];
 
     if (rootItem) {
       // Parse root-level data
@@ -434,6 +537,14 @@ export function buildInlineDatasources(
       startLine = rootItem.startLine;
       endLine = rootItem.endLine;
       byteSize = rootItem.byteSize;
+      
+      // Add root location
+      locations.push({
+        propertyPath: '',
+        startLine: rootItem.startLine,
+        endLine: rootItem.endLine,
+        format: rootItem.format,
+      });
     } else {
       // Create empty object for dot-path only definitions
       baseData = {};
@@ -450,7 +561,15 @@ export function buildInlineDatasources(
         }
         setDotPath(baseData as Record<string, unknown>, subPath, value);
         
-        // Update metadata
+        // Add property location
+        locations.push({
+          propertyPath: subPath,
+          startLine: item.startLine,
+          endLine: item.endLine,
+          format: item.format,
+        });
+        
+        // Update overall metadata
         if (startLine === 0 || item.startLine < startLine) {
           startLine = item.startLine;
         }
@@ -463,7 +582,7 @@ export function buildInlineDatasources(
 
     datasources.set(
       rootName,
-      new InlineDatasource(baseData, format, documentPath, startLine, endLine, byteSize)
+      new InlineDatasource(baseData, format, documentPath, startLine, endLine, byteSize, locations)
     );
   }
 

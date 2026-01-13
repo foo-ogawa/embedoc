@@ -103,8 +103,17 @@ export async function processFile(
     const { data: frontmatter, content: bodyContent, raw: frontmatterRaw } =
       parseFrontmatter(content);
 
+    // Calculate frontmatter line offset for accurate line numbers
+    const frontmatterLineOffset = frontmatterRaw ? frontmatterRaw.split('\n').length - 1 : 0;
+
     // Parse inline data markers
     const inlineDataMarkers = parseInlineDataMarkers(bodyContent, commentStyle);
+    
+    // Adjust line numbers for frontmatter offset
+    for (const marker of inlineDataMarkers) {
+      marker.startLine += frontmatterLineOffset;
+      marker.endLine += frontmatterLineOffset;
+    }
     
     // Build inline datasources
     const inlineDatasources = buildInlineDatasources(
@@ -175,13 +184,17 @@ export async function processFile(
       // Execute embed
       const embedResult = await embed.render(ctx);
 
+      // Check for inline mode (no newlines around content)
+      const isInline = marker.params['inline'] === 'true';
+
       // Replace content
-      const newContent =
-        marker.startMarkerLine +
-        '\n' +
-        embedResult.content +
-        '\n' +
-        marker.endMarkerLine;
+      const newContent = isInline
+        ? marker.startMarkerLine + embedResult.content + marker.endMarkerLine
+        : marker.startMarkerLine +
+          '\n' +
+          embedResult.content +
+          '\n' +
+          marker.endMarkerLine;
 
       processedContent =
         processedContent.slice(0, marker.startIndex) +

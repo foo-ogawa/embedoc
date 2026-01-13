@@ -1,32 +1,88 @@
 /**
  * code_snippet Embed
- * Extract and display code snippets from specified files
+ * Extract and display code snippets from specified files or inline datasources
  *
- * Usage: <!--@embedoc:code_snippet file="path/to/file.ts" start="10" end="20" lang="typescript"-->
+ * Usage with file:
+ *   <!--@embedoc:code_snippet file="path/to/file.ts" start="10" end="20" lang="typescript"-->
+ *
+ * Usage with inline datasource:
+ *   <!--@embedoc:code_snippet datasource="my_code" lang="typescript"-->
  *
  * Parameters:
  *   - file: File path (relative to embedoc.config.yaml)
- *   - start: Start line number (default: 1)
- *   - end: End line number (default: end of file)
+ *   - datasource: Name of inline datasource containing code (alternative to file)
+ *   - path: Property path within datasource (optional, default: root)
+ *   - start: Start line number (default: 1) - only for file mode
+ *   - end: End line number (default: end of file) - only for file mode
  *   - lang: Language (default: auto-detect from extension)
  *   - title: Title (optional)
  */
 
-import { defineEmbed } from 'embedoc';
+import { defineEmbed, InlineDatasource } from '../../dist/index.js';
 import fs from 'node:fs';
 import path from 'node:path';
 
 export default defineEmbed({
   async render(ctx) {
+    const datasourceName = ctx.params['datasource'];
     const filePath = ctx.params['file'];
-    const startLine = parseInt(ctx.params['start'] || '1', 10);
-    const endLine = ctx.params['end'] ? parseInt(ctx.params['end'], 10) : undefined;
-    const lang = ctx.params['lang'] || detectLanguage(filePath);
+    const propertyPath = ctx.params['path'] || '';
+    const lang = ctx.params['lang'] || (filePath ? detectLanguage(filePath) : '');
     const title = ctx.params['title'];
 
-    if (!filePath) {
-      return { content: '⚠️ `file` parameter is required' };
+    // Mode 1: Inline datasource reference
+    if (datasourceName) {
+      const ds = ctx.datasources[datasourceName];
+      if (!ds) {
+        return { content: `⚠️ Datasource not found: ${datasourceName}` };
+      }
+
+      // Cast to InlineDatasource for type-safe access
+      const inlineDs = ds as InlineDatasource;
+
+      // Get code content from datasource
+      let code: string;
+      if (propertyPath) {
+        const value = await inlineDs.get(propertyPath);
+        if (value === undefined) {
+          return { content: `⚠️ Property not found: ${propertyPath}` };
+        }
+        code = String(value);
+      } else {
+        // Get raw data for root
+        const rawData = inlineDs.getRawData();
+        if (typeof rawData === 'string') {
+          code = rawData;
+        } else {
+          return { content: '⚠️ Datasource root is not a string. Use `path` parameter.' };
+        }
+      }
+
+      // Get location metadata
+      const meta = inlineDs.getMeta(propertyPath, ctx.filePath);
+
+      // Generate output
+      const parts: string[] = [];
+      if (title) {
+        parts.push(`**${title}**\n`);
+      }
+      parts.push(ctx.markdown.codeBlock(code, lang));
+
+      // Add source reference with line numbers from metadata
+      if (meta) {
+        parts.push(`\n📄 Source: \`${meta.relativePath}\` (lines ${meta.contentStartLine}-${meta.contentEndLine})`);
+      }
+
+      return { content: parts.join('\n') };
     }
+
+    // Mode 2: External file reference (original behavior)
+    if (!filePath) {
+      return { content: '⚠️ `file` or `datasource` parameter is required' };
+    }
+
+    const startLine = parseInt(ctx.params['start'] || '1', 10);
+    const endLine = ctx.params['end'] ? parseInt(ctx.params['end'], 10) : undefined;
 
     // Resolve file path relative to project root (where embedoc.config.yaml is)
     const resolvedPath = path.resolve(process.cwd(), filePath);

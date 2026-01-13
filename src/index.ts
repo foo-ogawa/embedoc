@@ -72,7 +72,7 @@ export {
   getRootName,
   parseInlineContent,
 } from './core/inline-datasource.js';
-export type { ParsedInlineData, ContentProcessingOptions } from './core/inline-datasource.js';
+export type { ParsedInlineData, ContentProcessingOptions, InlineDefinitionLocation } from './core/inline-datasource.js';
 export { DependencyGraph } from './core/dependency.js';
 export type { DependencyType, DependencyNode } from './core/dependency.js';
 

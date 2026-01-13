@@ -473,5 +473,165 @@ describe('buildInlineDatasources', () => {
       buildInlineDatasources(parsed, '/doc.md', { allowedFormats: ['yaml', 'json'] })
     ).toThrow(/disallowed format/);
   });
+
+  it('should track location for root definition', () => {
+    const parsed: ParsedInlineData[] = [
+      {
+        name: 'project',
+        format: 'yaml',
+        content: 'name: embedoc\nversion: 1.0.0',
+        startLine: 5,
+        endLine: 8,
+        byteSize: 30,
+      },
+    ];
+
+    const datasources = buildInlineDatasources(parsed, '/path/to/doc.md');
+    const ds = datasources.get('project')!;
+
+    // Check getMeta for root
+    const meta = ds.getMeta('');
+    expect(meta).not.toBeNull();
+    expect(meta!.propertyPath).toBe('');
+    expect(meta!.startLine).toBe(5);
+    expect(meta!.endLine).toBe(8);
+    expect(meta!.contentStartLine).toBe(6);
+    expect(meta!.contentEndLine).toBe(7);
+    expect(meta!.format).toBe('yaml');
+    expect(meta!.absolutePath).toBe('/path/to/doc.md');
+  });
+
+  it('should track locations for distributed definitions', () => {
+    const parsed: ParsedInlineData[] = [
+      {
+        name: 'project.name',
+        format: 'text',
+        content: 'embedoc',
+        startLine: 5,
+        endLine: 5,
+        byteSize: 8,
+      },
+      {
+        name: 'project.version',
+        format: 'text',
+        content: '1.0.0',
+        startLine: 10,
+        endLine: 10,
+        byteSize: 5,
+      },
+      {
+        name: 'project.author.name',
+        format: 'text',
+        content: 'Jane',
+        startLine: 15,
+        endLine: 15,
+        byteSize: 4,
+      },
+    ];
+
+    const datasources = buildInlineDatasources(parsed, '/path/to/doc.md');
+    const ds = datasources.get('project')!;
+
+    // No root definition
+    expect(ds.getMeta('')).toBeNull();
+
+    // Check individual properties
+    const nameMeta = ds.getMeta('name');
+    expect(nameMeta).not.toBeNull();
+    expect(nameMeta!.propertyPath).toBe('name');
+    expect(nameMeta!.startLine).toBe(5);
+
+    const versionMeta = ds.getMeta('version');
+    expect(versionMeta).not.toBeNull();
+    expect(versionMeta!.startLine).toBe(10);
+
+    const authorMeta = ds.getMeta('author.name');
+    expect(authorMeta).not.toBeNull();
+    expect(authorMeta!.startLine).toBe(15);
+
+    // Non-existent path
+    expect(ds.getMeta('nonexistent')).toBeNull();
+  });
+
+  it('should return all locations sorted by propertyPath', () => {
+    const parsed: ParsedInlineData[] = [
+      {
+        name: 'config',
+        format: 'yaml',
+        content: 'key: value',
+        startLine: 1,
+        endLine: 3,
+        byteSize: 10,
+      },
+      {
+        name: 'config.zebra',
+        format: 'text',
+        content: 'z',
+        startLine: 10,
+        endLine: 10,
+        byteSize: 1,
+      },
+      {
+        name: 'config.alpha.name',
+        format: 'text',
+        content: 'a',
+        startLine: 5,
+        endLine: 5,
+        byteSize: 1,
+      },
+      {
+        name: 'config.alpha.value',
+        format: 'text',
+        content: 'b',
+        startLine: 7,
+        endLine: 7,
+        byteSize: 1,
+      },
+    ];
+
+    const datasources = buildInlineDatasources(parsed, '/doc.md');
+    const ds = datasources.get('config')!;
+
+    const allMeta = ds.getAllMeta();
+    expect(allMeta).toHaveLength(4);
+
+    // Should be sorted: '' (root), 'alpha.name', 'alpha.value', 'zebra'
+    expect(allMeta[0]!.propertyPath).toBe('');
+    expect(allMeta[1]!.propertyPath).toBe('alpha.name');
+    expect(allMeta[2]!.propertyPath).toBe('alpha.value');
+    expect(allMeta[3]!.propertyPath).toBe('zebra');
+  });
+
+  it('should calculate relativePath correctly', () => {
+    const parsed: ParsedInlineData[] = [
+      {
+        name: 'code',
+        format: 'text',
+        content: 'const x = 1;',
+        startLine: 10,
+        endLine: 12,
+        byteSize: 12,
+      },
+    ];
+
+    const datasources = buildInlineDatasources(parsed, '/project/src/feature.md');
+    const ds = datasources.get('code')!;
+
+    // Without targetDocPath
+    const meta1 = ds.getMeta('');
+    expect(meta1!.relativePath).toBe('/project/src/feature.md');
+
+    // With targetDocPath in same directory
+    const meta2 = ds.getMeta('', '/project/src/other.md');
+    expect(meta2!.relativePath).toBe('./feature.md');
+
+    // With targetDocPath in different directory
+    const meta3 = ds.getMeta('', '/project/docs/api.md');
+    expect(meta3!.relativePath).toBe('../src/feature.md');
+
+    // With targetDocPath in parent directory
+    const meta4 = ds.getMeta('', '/project/readme.md');
+    expect(meta4!.relativePath).toBe('./src/feature.md');
+  });
 });
 
