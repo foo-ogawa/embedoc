@@ -108,4 +108,122 @@ describe('processFile', () => {
       );
     });
   });
+
+  describe('existing content preservation (null/undefined return)', () => {
+    it('should keep existing content when embed returns null', async () => {
+      const content = `<!--@embedoc:test_embed id="1"-->\nexisting content\n<!--@embedoc:end-->`;
+      await writeFile(testFile, content);
+
+      const embeds: Record<string, EmbedDefinition> = {
+        test_embed: {
+          render: async () => ({ content: null }),
+        },
+      };
+
+      await processFile(testFile, content, targetConfig, embeds, {}, config, false);
+
+      const result = await readFile(testFile, 'utf-8');
+      expect(result).toBe(content);
+    });
+
+    it('should keep existing content when embed returns undefined', async () => {
+      const content = `<!--@embedoc:test_embed id="1"-->\nexisting content\n<!--@embedoc:end-->`;
+      await writeFile(testFile, content);
+
+      const embeds: Record<string, EmbedDefinition> = {
+        test_embed: {
+          render: async () => ({ content: undefined }),
+        },
+      };
+
+      await processFile(testFile, content, targetConfig, embeds, {}, config, false);
+
+      const result = await readFile(testFile, 'utf-8');
+      expect(result).toBe(content);
+    });
+
+    it('should provide existingContent in context', async () => {
+      const existingContent = 'previous generated content';
+      const content = `<!--@embedoc:test_embed id="1"-->\n${existingContent}\n<!--@embedoc:end-->`;
+      await writeFile(testFile, content);
+
+      let capturedExistingContent: string | undefined;
+
+      const embeds: Record<string, EmbedDefinition> = {
+        test_embed: {
+          render: async (ctx) => {
+            capturedExistingContent = ctx.existingContent;
+            return { content: 'new content' };
+          },
+        },
+      };
+
+      await processFile(testFile, content, targetConfig, embeds, {}, config, false);
+
+      expect(capturedExistingContent).toBe(`\n${existingContent}\n`);
+    });
+
+    it('should allow embed to return null for error recovery using existingContent check', async () => {
+      const existingContent = 'fallback content';
+      const content = `<!--@embedoc:test_embed id="1"-->\n${existingContent}\n<!--@embedoc:end-->`;
+      await writeFile(testFile, content);
+
+      const embeds: Record<string, EmbedDefinition> = {
+        test_embed: {
+          render: async (ctx) => {
+            // Simulate error recovery: return null when error occurs
+            // (existingContent is available in ctx for conditional logic)
+            const simulatedError = true;
+            if (simulatedError && ctx.existingContent) {
+              // Return null to keep existing content unchanged
+              return { content: null };
+            }
+            return { content: 'new content' };
+          },
+        },
+      };
+
+      await processFile(testFile, content, targetConfig, embeds, {}, config, false);
+
+      const result = await readFile(testFile, 'utf-8');
+      expect(result).toBe(content);
+    });
+
+    it('should not mark file as changed when returning null', async () => {
+      const content = `<!--@embedoc:test_embed id="1"-->\nexisting\n<!--@embedoc:end-->`;
+      await writeFile(testFile, content);
+
+      const embeds: Record<string, EmbedDefinition> = {
+        test_embed: {
+          render: async () => ({ content: null }),
+        },
+      };
+
+      const result = await processFile(testFile, content, targetConfig, embeds, {}, config, false);
+
+      expect(result.changed).toBe(false);
+      expect(result.markersUpdated).toBe(0);
+    });
+
+    it('should handle multiple markers with mixed null and string returns', async () => {
+      const content = `<!--@embedoc:embed_a id="1"-->\ncontent A\n<!--@embedoc:end-->\n\n<!--@embedoc:embed_b id="2"-->\ncontent B\n<!--@embedoc:end-->`;
+      await writeFile(testFile, content);
+
+      const embeds: Record<string, EmbedDefinition> = {
+        embed_a: {
+          render: async () => ({ content: null }), // Keep existing
+        },
+        embed_b: {
+          render: async () => ({ content: 'updated B' }), // Replace
+        },
+      };
+
+      await processFile(testFile, content, targetConfig, embeds, {}, config, false);
+
+      const result = await readFile(testFile, 'utf-8');
+      expect(result).toBe(
+        `<!--@embedoc:embed_a id="1"-->\ncontent A\n<!--@embedoc:end-->\n\n<!--@embedoc:embed_b id="2"-->\nupdated B\n<!--@embedoc:end-->`
+      );
+    });
+  });
 });

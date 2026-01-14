@@ -172,17 +172,23 @@ export async function processFile(
         inlineDatasources
       );
 
-      // Create context
+      // Create context (include existingContent for error recovery)
       const ctx: EmbedContext = {
         params: resolvedParams,
         frontmatter,
         datasources: mergedDatasources,
         markdown: markdownHelper,
         filePath,
+        existingContent: marker.existingContent,
       };
 
       // Execute embed
       const embedResult = await embed.render(ctx);
+
+      // If content is null or undefined, keep existing content (skip update)
+      if (embedResult.content === null || embedResult.content === undefined) {
+        continue;
+      }
 
       // Check for inline mode (no newlines around content)
       const isInline = marker.params['inline'] === 'true';

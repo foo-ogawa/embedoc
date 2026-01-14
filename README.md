@@ -413,6 +413,23 @@ export default defineEmbed({
 | `ctx.datasources` | `Record<string, Datasource>` | Available datasources |
 | `ctx.markdown` | `MarkdownHelper` | Markdown generation helpers |
 | `ctx.filePath` | `string` | Current file path |
+| `ctx.existingContent` | `string \| undefined` | Existing content between markers (for error recovery) |
+
+### Error Recovery / Graceful Degradation
+
+Return `null` or `undefined` from `render()` to keep existing content unchanged. This is useful when external data sources are unavailable.
+
+```typescript
+async render(ctx) {
+  try {
+    const data = await fetchFromDatabase(ctx.params['id']);
+    return { content: formatData(data) };
+  } catch (error) {
+    // On error, keep existing content
+    return { content: null };
+  }
+}
+```
 
 ### Markdown Helpers
 
@@ -933,7 +950,12 @@ import {
 ```typescript
 interface EmbedDefinition {
   dependsOn?: string[];
-  render: (ctx: EmbedContext) => Promise<{ content: string }>;
+  render: (ctx: EmbedContext) => Promise<EmbedResult>;
+}
+
+interface EmbedResult {
+  /** Return string to replace, or null/undefined to keep existing content */
+  content: string | null | undefined;
 }
 
 interface EmbedContext {
@@ -942,6 +964,8 @@ interface EmbedContext {
   datasources: Record<string, Datasource>;
   markdown: MarkdownHelper;
   filePath: string;
+  /** Existing content between markers (for error recovery) */
+  existingContent?: string;
 }
 
 interface Datasource {

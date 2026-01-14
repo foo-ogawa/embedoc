@@ -534,6 +534,25 @@ export interface EmbedContext {
    * ```
    */
   filePath: string;
+
+  /**
+   * Existing content between the markers (before replacement).
+   *
+   * Useful for error recovery - return `existingContent` when
+   * data sources are unavailable to preserve the previous state.
+   *
+   * @example
+   * ```typescript
+   * try {
+   *   const data = await fetchFromDatabase();
+   *   return { content: formatData(data) };
+   * } catch (error) {
+   *   console.warn('Database unavailable, keeping existing content');
+   *   return { content: ctx.existingContent ?? null };
+   * }
+   * ```
+   */
+  existingContent?: string;
 }
 
 /**
@@ -554,8 +573,11 @@ export interface EmbedResult {
    *
    * This string replaces the existing content between
    * the start and end markers in the document.
+   *
+   * Return `null` or `undefined` to keep the existing content
+   * (useful for error recovery when data sources are unavailable).
    */
-  content: string;
+  content: string | null | undefined;
 }
 
 /**
