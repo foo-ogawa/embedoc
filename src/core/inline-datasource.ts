@@ -14,7 +14,7 @@ export interface ParsedInlineData {
   /** Datasource name (may contain dots for nested paths) */
   name: string;
   /** Data format */
-  format: 'yaml' | 'json' | 'csv' | 'table' | 'text';
+  format: 'yaml' | 'json' | 'js' | 'csv' | 'table' | 'text';
   /** Raw content between markers */
   content: string;
   /** Start line number (for error reporting) */
@@ -76,7 +76,7 @@ const DEFAULT_STRIP_PATTERNS = [
 const DEFAULT_CONFIG: Required<Omit<InlineDatasourceConfig, 'stripPatterns'>> & { stripPatterns: string[] } = {
   enabled: true,
   maxBytes: 10240, // 10KB
-  allowedFormats: ['yaml', 'json', 'csv', 'table', 'text'],
+  allowedFormats: ['yaml', 'json', 'js', 'csv', 'table', 'text'],
   conflictPolicy: 'warn',
   allowAnonymous: false,
   stripCodeFences: true,
@@ -219,6 +219,11 @@ export function parseInlineContent(
 
     case 'json':
       return trimmed ? JSON.parse(trimmed) : {};
+
+    case 'js':
+    case 'javascript':
+      if (!trimmed) return {};
+      return new Function('return (' + trimmed + ')')();
 
     case 'csv':
       return parseCSV(trimmed);
