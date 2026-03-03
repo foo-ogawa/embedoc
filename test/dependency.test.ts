@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { DependencyGraph } from '../src/core/dependency.js';
-import type { EmbedifyConfig, EmbedDefinition } from '../src/types/index.js';
+import type { EmbedocConfig, EmbedDefinition } from '../src/types/index.js';
 
 describe('DependencyGraph', () => {
-  let config: EmbedifyConfig;
+  let config: EmbedocConfig;
   let embeds: Record<string, EmbedDefinition>;
 
   beforeEach(() => {
@@ -69,7 +69,7 @@ describe('DependencyGraph', () => {
     });
 
     it('should handle config without datasources', () => {
-      const configNoDatasources: EmbedifyConfig = {
+      const configNoDatasources: EmbedocConfig = {
         version: '1.0',
         targets: [],
         embeds_dir: './embeds',

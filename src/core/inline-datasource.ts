@@ -5,7 +5,7 @@
 
 import yaml from 'js-yaml';
 import path from 'node:path';
-import type { Datasource, QueryResult } from '../types/index.js';
+import type { Datasource, QueryResult, InlineFormatParser } from '../types/index.js';
 
 /**
  * Parsed inline data marker
@@ -195,7 +195,8 @@ export interface ContentProcessingOptions {
 export function parseInlineContent(
   content: string,
   format: string,
-  options: ContentProcessingOptions = {}
+  options: ContentProcessingOptions = {},
+  customFormats?: Record<string, InlineFormatParser>
 ): unknown {
   const { 
     stripCodeFences = true,
@@ -214,7 +215,6 @@ export function parseInlineContent(
 
   switch (format) {
     case 'yaml':
-      // Use JSON_SCHEMA for safe loading (no custom tags)
       return yaml.load(trimmed, { schema: yaml.JSON_SCHEMA }) ?? {};
 
     case 'json':
@@ -232,8 +232,15 @@ export function parseInlineContent(
       return parseMarkdownTable(trimmed);
 
     case 'text':
-    default:
       return trimmed;
+
+    default: {
+      const customParser = customFormats?.[format];
+      if (customParser) {
+        return customParser(trimmed);
+      }
+      return trimmed;
+    }
   }
 }
 
@@ -485,7 +492,8 @@ export class InlineDatasource implements Datasource {
 export function buildInlineDatasources(
   parsedData: ParsedInlineData[],
   documentPath: string,
-  config: InlineDatasourceConfig = {}
+  config: InlineDatasourceConfig = {},
+  customFormats?: Record<string, InlineFormatParser>
 ): Map<string, InlineDatasource> {
   const mergedConfig = { ...DEFAULT_CONFIG, ...config };
   const datasources = new Map<string, InlineDatasource>();
@@ -507,8 +515,9 @@ export function buildInlineDatasources(
       );
     }
 
-    // Validate format
-    if (!mergedConfig.allowedFormats.includes(data.format)) {
+    // Validate format (allow custom formats even if not in allowedFormats list)
+    const isCustomFormat = customFormats != null && data.format in customFormats;
+    if (!isCustomFormat && !mergedConfig.allowedFormats.includes(data.format)) {
       throw new Error(
         `Inline datasource "${data.name}" uses disallowed format "${data.format}"`
       );
@@ -537,7 +546,7 @@ export function buildInlineDatasources(
 
     if (rootItem) {
       // Parse root-level data
-      baseData = parseInlineContent(rootItem.content, rootItem.format, contentOptions);
+      baseData = parseInlineContent(rootItem.content, rootItem.format, contentOptions, customFormats);
       format = rootItem.format;
       startLine = rootItem.startLine;
       endLine = rootItem.endLine;
@@ -559,7 +568,7 @@ export function buildInlineDatasources(
     for (const item of items) {
       if (item.name !== rootName && item.name.startsWith(rootName + '.')) {
         const subPath = item.name.slice(rootName.length + 1);
-        const value = parseInlineContent(item.content, item.format, contentOptions);
+        const value = parseInlineContent(item.content, item.format, contentOptions, customFormats);
         
         if (typeof baseData !== 'object' || baseData === null) {
           baseData = {};

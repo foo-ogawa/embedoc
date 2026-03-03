@@ -24,6 +24,7 @@ export type {
   DatasourceConfig,
   OutputConfig,
   GithubConfig,
+  EmbedocConfig,
   EmbedifyConfig,
   InlineDatasourceConfig,
   // Markers
@@ -33,6 +34,9 @@ export type {
   QueryResult,
   Datasource,
   DatasourceFactory,
+  BuiltinDatasourceType,
+  CustomDatasourceDefinition,
+  InlineFormatParser,
   // Embeds
   MarkdownHelper,
   EmbedContext,
@@ -170,3 +174,37 @@ export const defineEmbed: DefineEmbedFn = (definition: EmbedDefinition) => defin
  * @deprecated Use `defineEmbed` instead for consistency.
  */
 export const defineTemplate = defineEmbed;
+
+// Custom datasource definition helper
+import type { CustomDatasourceDefinition } from './types/index.js';
+
+/**
+ * Define a custom datasource type for use in `embedoc.config.yaml`.
+ *
+ * Custom datasource types are registered by exporting a `datasourceTypes`
+ * object from `.embedoc/datasources/index.ts`. Each value should be
+ * created with this function.
+ *
+ * @param definition - The custom datasource definition
+ * @returns The same definition (for type inference)
+ *
+ * @example
+ * ```typescript
+ * import { defineDatasource } from 'embedoc';
+ *
+ * export default defineDatasource({
+ *   async create(config) {
+ *     const endpoint = config['endpoint'] as string;
+ *     const data = await fetch(endpoint).then(r => r.json());
+ *     return {
+ *       async query() { return data; },
+ *       async getAll() { return data; },
+ *       async close() {},
+ *     };
+ *   }
+ * });
+ * ```
+ */
+export const defineDatasource = (
+  definition: CustomDatasourceDefinition
+): CustomDatasourceDefinition => definition;

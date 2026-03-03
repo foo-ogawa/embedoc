@@ -33,15 +33,26 @@ export interface GeneratorConfig {
 }
 
 /**
- * Datasource configuration
+ * Built-in datasource type identifiers.
+ */
+export type BuiltinDatasourceType = 'sqlite' | 'csv' | 'json' | 'yaml' | 'glob';
+
+/**
+ * Datasource configuration.
+ *
+ * The `type` field accepts built-in types ('sqlite', 'csv', 'json', 'yaml', 'glob')
+ * or any custom type name registered via `datasources_dir`.
+ * Custom types receive the entire config object (including arbitrary properties)
+ * in their `create()` method.
  */
 export interface DatasourceConfig {
-  type: 'sqlite' | 'csv' | 'json' | 'yaml' | 'glob';
+  type: string;
   path?: string;
   pattern?: string;
   query?: string;
   encoding?: string;
   generators?: GeneratorConfig[];
+  [key: string]: unknown;
 }
 
 /**
@@ -82,18 +93,27 @@ export interface InlineDatasourceConfig {
 /**
  * Main configuration file
  */
-export interface EmbedifyConfig {
+export interface EmbedocConfig {
   version: string;
   targets: TargetConfig[];
   comment_styles?: Record<string, CommentStyle>;
   datasources?: Record<string, DatasourceConfig>;
+  /** Directory for custom renderer modules (default: ".embedoc/renderers") */
+  renderers_dir?: string;
+  /** @deprecated Use {@link renderers_dir} instead. */
   embeds_dir?: string;
+  /** Directory for custom datasource type modules (default: ".embedoc/datasources") */
+  datasources_dir?: string;
+  /** Directory for Handlebars templates (default: ".embedoc/templates") */
   templates_dir?: string;
   output?: OutputConfig;
   github?: GithubConfig;
   /** Inline datasource configuration */
   inline_datasource?: InlineDatasourceConfig;
 }
+
+/** @deprecated Use {@link EmbedocConfig} instead. */
+export type EmbedifyConfig = EmbedocConfig;
 
 // =============================================================================
 // Markers
@@ -249,6 +269,32 @@ export interface Datasource {
  * Datasource factory
  */
 export type DatasourceFactory = (config: DatasourceConfig) => Promise<Datasource>;
+
+/**
+ * Definition for a custom datasource type.
+ *
+ * Register custom datasource types by exporting a `datasourceTypes` object
+ * from `.embedoc/datasources/index.ts`. Each value should be created with
+ * {@link defineDatasource}.
+ *
+ * The `create()` method receives the full datasource config from
+ * `embedoc.config.yaml` (including any arbitrary properties) and must
+ * return a {@link Datasource} instance.
+ */
+export interface CustomDatasourceDefinition {
+  create(config: DatasourceConfig): Promise<Datasource>;
+}
+
+/**
+ * Parser function for a custom inline datasource format.
+ *
+ * Receives the raw text content from an `@embedoc-data` marker block
+ * and returns the parsed data (object, array, or primitive).
+ *
+ * Register custom formats by exporting an `inlineFormats` object
+ * from `.embedoc/datasources/index.ts`.
+ */
+export type InlineFormatParser = (content: string) => unknown;
 
 // =============================================================================
 // Embeds (Templates)

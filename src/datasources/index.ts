@@ -2,7 +2,12 @@
  * Datasource Factory
  */
 
-import type { Datasource, DatasourceConfig, EmbedifyConfig } from '../types/index.js';
+import type {
+  Datasource,
+  DatasourceConfig,
+  EmbedocConfig,
+  CustomDatasourceDefinition,
+} from '../types/index.js';
 import { createSqliteDatasource } from './sqlite.js';
 import { createCsvDatasource } from './csv.js';
 import { createJsonDatasource } from './json.js';
@@ -16,9 +21,17 @@ export { YamlDatasource, createYamlDatasource } from './yaml.js';
 export { GlobDatasource, createGlobDatasource } from './glob.js';
 
 /**
- * Create a datasource
+ * Create a datasource from config.
+ * Checks custom types first, then falls back to built-in types.
  */
-export function createDatasource(config: DatasourceConfig): Datasource {
+export async function createDatasource(
+  config: DatasourceConfig,
+  customTypes?: Record<string, CustomDatasourceDefinition>
+): Promise<Datasource> {
+  if (customTypes && config.type in customTypes) {
+    return customTypes[config.type]!.create(config);
+  }
+
   switch (config.type) {
     case 'sqlite':
       return createSqliteDatasource(config);
@@ -31,21 +44,22 @@ export function createDatasource(config: DatasourceConfig): Datasource {
     case 'glob':
       return createGlobDatasource(config);
     default:
-      throw new Error(`Unknown datasource type: ${(config as DatasourceConfig).type}`);
+      throw new Error(`Unknown datasource type: "${config.type}". Register custom types in datasources_dir.`);
   }
 }
 
 /**
  * Initialize all datasources from config
  */
-export function initializeDatasources(
-  config: EmbedifyConfig
-): Record<string, Datasource> {
+export async function initializeDatasources(
+  config: EmbedocConfig,
+  customTypes?: Record<string, CustomDatasourceDefinition>
+): Promise<Record<string, Datasource>> {
   const datasources: Record<string, Datasource> = {};
 
   if (config.datasources) {
     for (const [name, dsConfig] of Object.entries(config.datasources)) {
-      datasources[name] = createDatasource(dsConfig);
+      datasources[name] = await createDatasource(dsConfig, customTypes);
     }
   }
 

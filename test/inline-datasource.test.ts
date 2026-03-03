@@ -635,3 +635,74 @@ describe('buildInlineDatasources', () => {
   });
 });
 
+describe('custom inline format parsers', () => {
+  it('should use custom format parser in parseInlineContent', () => {
+    const customFormats = {
+      ini: (content: string) => {
+        const result: Record<string, string> = {};
+        for (const line of content.split('\n')) {
+          const [key, ...valueParts] = line.split('=');
+          if (key && valueParts.length > 0) {
+            result[key.trim()] = valueParts.join('=').trim();
+          }
+        }
+        return result;
+      },
+    };
+
+    const data = parseInlineContent(
+      'host=localhost\nport=5432',
+      'ini',
+      {},
+      customFormats
+    );
+    expect(data).toEqual({ host: 'localhost', port: '5432' });
+  });
+
+  it('should fall back to text for unknown format without custom parser', () => {
+    const result = parseInlineContent('some content', 'unknown_fmt');
+    expect(result).toBe('some content');
+  });
+
+  it('should pass custom formats through buildInlineDatasources', () => {
+    const customFormats = {
+      kv: (content: string) => {
+        const result: Record<string, string> = {};
+        for (const line of content.split('\n')) {
+          const match = line.match(/^(\w+):\s*(.*)$/);
+          if (match) {
+            result[match[1]!] = match[2]!;
+          }
+        }
+        return result;
+      },
+    };
+
+    const parsedData = [
+      {
+        name: 'settings',
+        format: 'kv' as 'yaml' | 'json' | 'js' | 'csv' | 'table' | 'text',
+        content: 'theme: dark\nlang: en',
+        startLine: 1,
+        endLine: 3,
+        byteSize: 20,
+      },
+    ];
+
+    const config = {
+      allowedFormats: ['yaml', 'json'],
+    };
+
+    const datasources = buildInlineDatasources(
+      parsedData,
+      '/test/doc.md',
+      config,
+      customFormats
+    );
+
+    expect(datasources.size).toBe(1);
+    const ds = datasources.get('settings')!;
+    expect(ds.data).toEqual({ theme: 'dark', lang: 'en' });
+  });
+});
+

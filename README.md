@@ -46,7 +46,26 @@ yarn add embedoc
 
 ## Quick Start
 
-### 1. Create Configuration File
+### 1. Initialize Project
+
+```bash
+npx embedoc init
+```
+
+This creates:
+- `embedoc.config.yaml` - configuration file
+- `.embedoc/renderers/index.ts` - renderer registration
+- `.embedoc/datasources/index.ts` - custom datasource registration
+- `.embedoc/templates/` - Handlebars templates directory
+
+If `package.json` exists, npm scripts are also added:
+- `npm run embedoc:build` - build documents
+- `npm run embedoc:watch` - watch mode
+- `npm run embedoc:generate` - run generators
+
+### 2. Configure
+
+Edit `embedoc.config.yaml` to set your targets and datasources:
 
 ```yaml
 # embedoc.config.yaml
@@ -62,15 +81,12 @@ datasources:
   metadata_db:
     type: sqlite
     path: "./data/metadata.db"
-
-embeds_dir: "./embeds"
-templates_dir: "./templates"
 ```
 
-### 2. Create an Embed
+### 3. Create a Renderer
 
 ```typescript
-// embeds/table_columns.ts
+// .embedoc/renderers/table_columns.ts
 import { defineEmbed } from 'embedoc';
 
 export default defineEmbed({
@@ -104,10 +120,10 @@ export default defineEmbed({
 });
 ```
 
-Register your embed in `embeds/index.ts`:
+Register your renderer in `.embedoc/renderers/index.ts`:
 
 ```typescript
-// embeds/index.ts
+// .embedoc/renderers/index.ts
 import tableColumns from './table_columns.ts';
 
 export const embeds = {
@@ -117,7 +133,7 @@ export const embeds = {
 
 > **Note**: embedoc can directly import TypeScript files, so **no compilation is required**.
 
-### 3. Add Markers to Your Document
+### 4. Add Markers to Your Document
 
 ```markdown
 # Users Table
@@ -126,10 +142,12 @@ export const embeds = {
 <!--@embedoc:end-->
 ```
 
-### 4. Run Build
+### 5. Run Build
 
 ```bash
 npx embedoc build
+# or, if scripts were added to package.json:
+npm run embedoc:build
 ```
 
 ---
@@ -137,7 +155,12 @@ npx embedoc build
 ## CLI Commands
 
 ```bash
+# Initialize project (creates config, .embedoc/ directory, updates package.json)
+embedoc init
+embedoc init --force   # overwrite existing files
+
 # Build all files
+embedoc build
 embedoc build --config embedoc.config.yaml
 
 # Build specific files only
@@ -150,6 +173,7 @@ embedoc generate --datasource tables
 embedoc generate --all
 
 # Watch mode (incremental build)
+embedoc watch
 embedoc watch --config embedoc.config.yaml
 
 # Debug dependency graph
@@ -161,6 +185,8 @@ embedoc build --dry-run
 # Verbose output
 embedoc build --verbose
 ```
+
+All commands can be run directly with `npx embedoc <command>` or via package.json scripts after `embedoc init`.
 
 ---
 
@@ -246,11 +272,14 @@ datasources:
     type: glob
     pattern: "./docs/**/*.md"
 
-# Embed directory (TypeScript)
-embeds_dir: "./embeds"
+# Renderer directory (TypeScript) - default: ".embedoc/renderers"
+renderers_dir: ".embedoc/renderers"
 
-# Template directory (Handlebars)
-templates_dir: "./templates"
+# Custom datasource types directory - default: ".embedoc/datasources"
+datasources_dir: ".embedoc/datasources"
+
+# Template directory (Handlebars) - default: ".embedoc/templates"
+templates_dir: ".embedoc/templates"
 
 # Output settings
 output:
@@ -713,6 +742,97 @@ inline_datasource:
 
 ---
 
+## Custom Datasources
+
+Define custom datasource types in TypeScript to connect to any data source (APIs, databases, custom file formats, etc.).
+
+### Defining a Custom Datasource Type
+
+```typescript
+// .embedoc/datasources/github.ts
+import { defineDatasource } from 'embedoc';
+
+export default defineDatasource({
+  async create(config) {
+    const owner = config['owner'] as string;
+    const repo = config['repo'] as string;
+    const response = await fetch(
+      `https://api.github.com/repos/${owner}/${repo}/issues`
+    );
+    const issues = await response.json();
+
+    return {
+      async query() { return issues; },
+      async getAll() { return issues; },
+      async close() {},
+    };
+  }
+});
+```
+
+### Registering Custom Datasource Types
+
+```typescript
+// .embedoc/datasources/index.ts
+import github from './github.ts';
+
+export const datasourceTypes = {
+  github,
+};
+```
+
+### Using in Configuration
+
+```yaml
+# embedoc.config.yaml
+datasources:
+  my_issues:
+    type: github         # matches key in datasourceTypes
+    owner: "myorg"
+    repo: "myrepo"
+```
+
+All config properties are passed to the `create()` method, so custom datasources can accept any configuration.
+
+### Custom Inline Format Parsers
+
+Register custom format parsers for `@embedoc-data` inline markers by exporting `inlineFormats` alongside `datasourceTypes`:
+
+```typescript
+// .embedoc/datasources/index.ts
+import github from './github.ts';
+
+export const datasourceTypes = {
+  github,
+};
+
+export const inlineFormats = {
+  toml: (content: string) => parseToml(content),
+  ini: (content: string) => {
+    const result: Record<string, string> = {};
+    for (const line of content.split('\n')) {
+      const [key, ...rest] = line.split('=');
+      if (key && rest.length > 0) {
+        result[key.trim()] = rest.join('=').trim();
+      }
+    }
+    return result;
+  },
+};
+```
+
+Custom formats can then be used in documents:
+
+```markdown
+<!--@embedoc-data:config format="ini"-->
+host=localhost
+port=5432
+database=myapp
+<!--@embedoc-data:end-->
+```
+
+---
+
 ## File Generation
 
 Generate new files in bulk using Handlebars templates based on datasource records.
@@ -734,7 +854,7 @@ datasources:
 ### Template (Handlebars)
 
 ```handlebars
-{{!-- templates/table_doc.hbs --}}
+{{!-- .embedoc/templates/table_doc.hbs --}}
 ---
 doc_id: "{{table_name}}"
 embeds:
@@ -851,26 +971,31 @@ Frontmatter values can be referenced in marker attributes using `${...}` syntax.
 
 ```
 your-project/
-├── embedoc.config.yaml     # Configuration file
-├── embeds/                  # Embed definitions (TypeScript)
-│   ├── table_columns.ts
-│   ├── table_relations.ts
-│   └── index.ts             # Export all embeds
-├── templates/               # File generation templates (Handlebars)
-│   ├── table_doc.hbs
-│   └── view_doc.hbs
-├── data/                    # Datasources
+├── embedoc.config.yaml        # Configuration file
+├── .embedoc/                   # All embedoc custom code
+│   ├── renderers/              # Renderer definitions (TypeScript)
+│   │   ├── index.ts            # Export all renderers
+│   │   ├── table_columns.ts
+│   │   └── table_relations.ts
+│   ├── datasources/            # Custom datasource types (TypeScript)
+│   │   ├── index.ts            # Export datasourceTypes and inlineFormats
+│   │   └── github.ts
+│   ├── templates/              # File generation templates (Handlebars)
+│   │   ├── table_doc.hbs
+│   │   └── view_doc.hbs
+│   └── package.json            # Optional: dependencies for custom code
+├── data/                       # Datasource files
 │   ├── metadata.db
 │   └── endpoints.csv
-└── docs/                    # Target documents
+└── docs/                       # Target documents
     └── tables/
         └── users.md
 ```
 
-### Embed Registration
+### Renderer Registration
 
 ```typescript
-// embeds/index.ts
+// .embedoc/renderers/index.ts
 import tableColumns from './table_columns.ts';
 import tableRelations from './table_relations.ts';
 import customEmbed from './custom_embed.ts';
@@ -923,6 +1048,7 @@ npm test
 import {
   // Core
   defineEmbed,
+  defineDatasource,
   build,
   processFile,
   
@@ -1002,6 +1128,12 @@ interface InlineDatasourceConfig {
   stripCodeFences?: boolean;
   stripPatterns?: string[];
 }
+
+interface CustomDatasourceDefinition {
+  create(config: DatasourceConfig): Promise<Datasource>;
+}
+
+type InlineFormatParser = (content: string) => unknown;
 ```
 
 ---

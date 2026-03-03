@@ -6,13 +6,14 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { glob } from 'glob';
 import type {
-  EmbedifyConfig,
+  EmbedocConfig,
   EmbedDefinition,
   EmbedContext,
   Datasource,
   ProcessResult,
   BuildResult,
   TargetConfig,
+  InlineFormatParser,
 } from '../types/index.js';
 import {
   parseMarkers,
@@ -82,8 +83,9 @@ export async function processFile(
   targetConfig: TargetConfig,
   embeds: Record<string, EmbedDefinition>,
   datasources: Record<string, Datasource>,
-  config: EmbedifyConfig,
-  dryRun = false
+  config: EmbedocConfig,
+  dryRun = false,
+  customInlineFormats?: Record<string, InlineFormatParser>
 ): Promise<ProcessResult> {
   const result: ProcessResult = {
     filePath,
@@ -119,7 +121,8 @@ export async function processFile(
     const inlineDatasources = buildInlineDatasources(
       inlineDataMarkers,
       filePath,
-      config.inline_datasource
+      config.inline_datasource,
+      customInlineFormats
     );
 
     // Merge inline datasources with external (inline takes precedence)
@@ -261,13 +264,14 @@ async function getTargetFiles(
  * Process all target files
  */
 export async function build(
-  config: EmbedifyConfig,
+  config: EmbedocConfig,
   embeds: Record<string, EmbedDefinition>,
   datasources: Record<string, Datasource>,
   options: {
     dryRun?: boolean;
     verbose?: boolean;
     specificFiles?: string[];
+    customInlineFormats?: Record<string, InlineFormatParser>;
   } = {}
 ): Promise<BuildResult> {
   const startTime = Date.now();
@@ -301,7 +305,8 @@ export async function build(
           embeds,
           datasources,
           config,
-          options.dryRun
+          options.dryRun,
+          options.customInlineFormats
         );
 
         results.push(result);

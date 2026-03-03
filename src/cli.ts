@@ -5,14 +5,14 @@
  */
 
 import { Command } from 'commander';
-import { readFile, access } from 'node:fs/promises';
+import { readFile, writeFile, access, mkdir } from 'node:fs/promises';
 import { resolve, relative } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import yaml from 'js-yaml';
 import pc from 'picocolors';
 import chokidar from 'chokidar';
 import { tsImport } from 'tsx/esm/api';
-import type { EmbedifyConfig, EmbedDefinition } from './types/index.js';
+import type { EmbedocConfig, EmbedDefinition, CustomDatasourceDefinition, InlineFormatParser } from './types/index.js';
 import { initializeDatasources, closeDatasources } from './datasources/index.js';
 import { build } from './core/processor.js';
 import { generateAll } from './core/generator.js';
@@ -23,20 +23,20 @@ const program = new Command();
 program
   .name('embedoc')
   .description('In-Place Document Generator')
-  .version('0.1.0');
+  .version('0.11.0');
 
 /**
  * Load configuration file
  */
-async function loadConfig(configPath: string): Promise<EmbedifyConfig> {
+async function loadConfig(configPath: string): Promise<EmbedocConfig> {
   const absolutePath = resolve(configPath);
   const content = await readFile(absolutePath, { encoding: 'utf-8' });
 
   if (configPath.endsWith('.json')) {
-    return JSON.parse(content) as EmbedifyConfig;
+    return JSON.parse(content) as EmbedocConfig;
   }
 
-  return yaml.load(content) as EmbedifyConfig;
+  return yaml.load(content) as EmbedocConfig;
 }
 
 /**
@@ -52,19 +52,32 @@ async function fileExists(filePath: string): Promise<boolean> {
 }
 
 /**
- * Load embeds (supports both TypeScript and JavaScript)
+ * Resolve renderers_dir from config, with embeds_dir as deprecated fallback
  */
-async function loadEmbeds(
-  embedsDir: string
+function resolveRenderersDir(config: EmbedocConfig): string {
+  if (config.renderers_dir) {
+    return config.renderers_dir;
+  }
+  if (config.embeds_dir) {
+    console.warn(
+      pc.yellow('Warning: "embeds_dir" is deprecated. Use "renderers_dir" instead.')
+    );
+    return config.embeds_dir;
+  }
+  return '.embedoc/renderers';
+}
+
+/**
+ * Load renderers (supports both TypeScript and JavaScript)
+ */
+async function loadRenderers(
+  renderersDir: string
 ): Promise<Record<string, EmbedDefinition>> {
-  const tsIndexPath = resolve(embedsDir, 'index.ts');
-  const jsIndexPath = resolve(embedsDir, 'index.js');
+  const tsIndexPath = resolve(renderersDir, 'index.ts');
+  const jsIndexPath = resolve(renderersDir, 'index.js');
 
   try {
-    // First try TypeScript file
     if (await fileExists(tsIndexPath)) {
-      // Use tsx to directly import TypeScript
-      // tsImport may return { default: { embeds: ... } } or { embeds: ... }
       const module = await tsImport(tsIndexPath, import.meta.url) as { 
         embeds?: Record<string, EmbedDefinition>;
         default?: { embeds?: Record<string, EmbedDefinition> };
@@ -72,25 +85,225 @@ async function loadEmbeds(
       return module.embeds ?? module.default?.embeds ?? {};
     }
 
-    // Fall back to JavaScript
     if (await fileExists(jsIndexPath)) {
       const moduleUrl = pathToFileURL(jsIndexPath).href;
       const module = (await import(moduleUrl)) as { embeds?: Record<string, EmbedDefinition> };
       return module.embeds ?? {};
     }
 
-    console.warn(
-      pc.yellow(`Warning: No embeds found in ${embedsDir} (index.ts or index.js)`)
-    );
     return {};
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.warn(
-      pc.yellow(`Warning: Could not load embeds from ${embedsDir}: ${message}`)
+      pc.yellow(`Warning: Could not load renderers from ${renderersDir}: ${message}`)
     );
     return {};
   }
 }
+
+/**
+ * Result of loading custom datasource modules
+ */
+interface CustomDatasourceModules {
+  datasourceTypes: Record<string, CustomDatasourceDefinition>;
+  inlineFormats: Record<string, InlineFormatParser>;
+}
+
+/**
+ * Load custom datasource types and inline format parsers from datasources_dir
+ */
+async function loadCustomDatasources(
+  datasourcesDir: string
+): Promise<CustomDatasourceModules> {
+  const tsIndexPath = resolve(datasourcesDir, 'index.ts');
+  const jsIndexPath = resolve(datasourcesDir, 'index.js');
+
+  const empty: CustomDatasourceModules = { datasourceTypes: {}, inlineFormats: {} };
+
+  try {
+    let module: {
+      datasourceTypes?: Record<string, CustomDatasourceDefinition>;
+      inlineFormats?: Record<string, InlineFormatParser>;
+      default?: {
+        datasourceTypes?: Record<string, CustomDatasourceDefinition>;
+        inlineFormats?: Record<string, InlineFormatParser>;
+      };
+    } | undefined;
+
+    if (await fileExists(tsIndexPath)) {
+      module = await tsImport(tsIndexPath, import.meta.url) as typeof module;
+    } else if (await fileExists(jsIndexPath)) {
+      const moduleUrl = pathToFileURL(jsIndexPath).href;
+      module = (await import(moduleUrl)) as typeof module;
+    }
+
+    if (!module) {
+      return empty;
+    }
+
+    return {
+      datasourceTypes: module.datasourceTypes ?? module.default?.datasourceTypes ?? {},
+      inlineFormats: module.inlineFormats ?? module.default?.inlineFormats ?? {},
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.warn(
+      pc.yellow(`Warning: Could not load custom datasources from ${datasourcesDir}: ${message}`)
+    );
+    return empty;
+  }
+}
+
+/**
+ * init command
+ */
+program
+  .command('init')
+  .description('Initialize embedoc in the current project')
+  .option('-f, --force', 'Overwrite existing files')
+  .action(async (options) => {
+    try {
+      console.log(pc.cyan('📁 Initializing embedoc...\n'));
+
+      const created: string[] = [];
+      const skipped: string[] = [];
+
+      const writeIfNotExists = async (filePath: string, content: string) => {
+        const absPath = resolve(filePath);
+        if (!options.force && await fileExists(absPath)) {
+          skipped.push(filePath);
+          return;
+        }
+        const dir = absPath.substring(0, absPath.lastIndexOf('/'));
+        await mkdir(dir, { recursive: true });
+        await writeFile(absPath, content, { encoding: 'utf-8' });
+        created.push(filePath);
+      };
+
+      // embedoc.config.yaml
+      const configContent = `version: "1.0"
+
+targets:
+  - pattern: "./docs/**/*.md"
+    comment_style: html
+    exclude:
+      - "**/node_modules/**"
+      - "**/.git/**"
+
+datasources: {}
+  # example_db:
+  #   type: sqlite
+  #   path: "./data/example.db"
+  # example_csv:
+  #   type: csv
+  #   path: "./data/example.csv"
+`;
+
+      await writeIfNotExists('embedoc.config.yaml', configContent);
+
+      // .embedoc/renderers/index.ts
+      const renderersIndexContent = `/**
+ * embedoc renderers
+ *
+ * Export your custom renderers here.
+ * Each key becomes a marker name: <!--@embedoc:key_name ...-->
+ */
+
+// import myRenderer from './my_renderer.ts';
+
+export const embeds = {
+  // my_renderer: myRenderer,
+};
+`;
+
+      await writeIfNotExists('.embedoc/renderers/index.ts', renderersIndexContent);
+
+      // .embedoc/datasources/index.ts
+      const datasourcesIndexContent = `/**
+ * embedoc custom datasources and inline format parsers
+ *
+ * datasourceTypes: register custom datasource types usable in embedoc.config.yaml
+ * inlineFormats: register custom parsers for @embedoc-data format="xxx" markers
+ */
+
+// import type { CustomDatasourceDefinition, InlineFormatParser } from 'embedoc';
+// import myDatasource from './my_datasource.ts';
+
+export const datasourceTypes = {
+  // my_datasource: myDatasource,
+};
+
+export const inlineFormats = {
+  // toml: (content: string) => parseToml(content),
+};
+`;
+
+      await writeIfNotExists('.embedoc/datasources/index.ts', datasourcesIndexContent);
+
+      // .embedoc/templates/ (create directory only via a .gitkeep)
+      await writeIfNotExists('.embedoc/templates/.gitkeep', '');
+
+      // Update package.json if it exists
+      const pkgPath = resolve('package.json');
+      if (await fileExists(pkgPath)) {
+        const pkgRaw = await readFile(pkgPath, { encoding: 'utf-8' });
+        const pkg = JSON.parse(pkgRaw) as Record<string, unknown>;
+        const scripts = (pkg['scripts'] ?? {}) as Record<string, string>;
+        let scriptsUpdated = false;
+
+        const scriptEntries: [string, string][] = [
+          ['embedoc:build', 'embedoc build'],
+          ['embedoc:watch', 'embedoc watch'],
+          ['embedoc:generate', 'embedoc generate --all'],
+        ];
+
+        for (const [key, value] of scriptEntries) {
+          if (!(key in scripts)) {
+            scripts[key] = value;
+            scriptsUpdated = true;
+          }
+        }
+
+        if (scriptsUpdated) {
+          pkg['scripts'] = scripts;
+          await writeFile(pkgPath, JSON.stringify(pkg, null, 2) + '\n', { encoding: 'utf-8' });
+          console.log(pc.green('   Updated package.json scripts:'));
+          for (const [key, value] of scriptEntries) {
+            if (!((pkgRaw.includes(`"${key}"`)))) {
+              console.log(pc.gray(`     "${key}": "${value}"`));
+            }
+          }
+          console.log('');
+        }
+      }
+
+      // Summary
+      if (created.length > 0) {
+        console.log(pc.green('   Created:'));
+        for (const f of created) {
+          console.log(pc.gray(`     ${f}`));
+        }
+      }
+      if (skipped.length > 0) {
+        console.log(pc.yellow('   Skipped (already exists):'));
+        for (const f of skipped) {
+          console.log(pc.gray(`     ${f}`));
+        }
+      }
+
+      console.log('');
+      console.log(pc.green('✅ embedoc initialized!'));
+      console.log('');
+      console.log('   Next steps:');
+      console.log(pc.cyan('   1. Edit embedoc.config.yaml to configure targets and datasources'));
+      console.log(pc.cyan('   2. Add renderers in .embedoc/renderers/'));
+      console.log(pc.cyan('   3. Run: npx embedoc build'));
+    } catch (error) {
+      console.error(pc.red('❌ Init failed:'));
+      console.error(error instanceof Error ? error.message : String(error));
+      process.exit(1);
+    }
+  });
 
 /**
  * build command
@@ -108,18 +321,22 @@ program
       console.log(pc.cyan('🔧 Loading configuration...'));
       const config = await loadConfig(options.config);
 
-      console.log(pc.cyan('📦 Initializing datasources...'));
-      const datasources = initializeDatasources(config);
+      const datasourcesDir = config.datasources_dir ?? '.embedoc/datasources';
+      const customModules = await loadCustomDatasources(datasourcesDir);
 
-      console.log(pc.cyan('📝 Loading embeds...'));
-      const embedsDir = config.embeds_dir ?? './embeds';
-      const embeds = await loadEmbeds(embedsDir);
+      console.log(pc.cyan('📦 Initializing datasources...'));
+      const datasources = await initializeDatasources(config, customModules.datasourceTypes);
+
+      console.log(pc.cyan('📝 Loading renderers...'));
+      const renderersDir = resolveRenderersDir(config);
+      const embeds = await loadRenderers(renderersDir);
 
       console.log(pc.cyan('🔄 Processing files...'));
       const result = await build(config, embeds, datasources, {
         dryRun: options.dryRun,
         verbose: options.verbose,
         specificFiles: files.length > 0 ? files : undefined,
+        customInlineFormats: customModules.inlineFormats,
       });
 
       // Cleanup
@@ -185,8 +402,11 @@ program
       console.log(pc.cyan('🔧 Loading configuration...'));
       const config = await loadConfig(options.config);
 
+      const datasourcesDir = config.datasources_dir ?? '.embedoc/datasources';
+      const customModules = await loadCustomDatasources(datasourcesDir);
+
       console.log(pc.cyan('📦 Initializing datasources...'));
-      const datasources = initializeDatasources(config);
+      const datasources = await initializeDatasources(config, customModules.datasourceTypes);
 
       console.log(pc.cyan('📄 Generating files...'));
       const results = await generateAll(config, datasources, {
@@ -250,12 +470,15 @@ program
       console.log(pc.cyan('🔧 Loading configuration...'));
       const config = await loadConfig(options.config);
 
-      console.log(pc.cyan('📦 Initializing datasources...'));
-      let datasources = initializeDatasources(config);
+      const datasourcesDir = config.datasources_dir ?? '.embedoc/datasources';
+      const customModules = await loadCustomDatasources(datasourcesDir);
 
-      console.log(pc.cyan('📝 Loading embeds...'));
-      const embedsDir = resolve(config.embeds_dir ?? './embeds');
-      let embeds = await loadEmbeds(embedsDir);
+      console.log(pc.cyan('📦 Initializing datasources...'));
+      let datasources = await initializeDatasources(config, customModules.datasourceTypes);
+
+      console.log(pc.cyan('📝 Loading renderers...'));
+      const renderersDir = resolve(resolveRenderersDir(config));
+      let embeds = await loadRenderers(renderersDir);
 
       // Build dependency graph
       console.log(pc.cyan('🔗 Building dependency graph...'));
@@ -290,25 +513,23 @@ program
         const changes = new Map(pendingChanges);
         pendingChanges.clear();
 
-        // Reload embeds if embed file changed
-        let embedsReloaded = false;
+        let renderersReloaded = false;
         for (const [filePath] of changes) {
-          if (filePath.startsWith(embedsDir) && filePath.endsWith('.ts')) {
-            console.log(pc.yellow(`\n🔄 Embed changed: ${relative(process.cwd(), filePath)}`));
-            console.log(pc.cyan('   Reloading embeds...'));
+          if (filePath.startsWith(renderersDir) && filePath.endsWith('.ts')) {
+            console.log(pc.yellow(`\n🔄 Renderer changed: ${relative(process.cwd(), filePath)}`));
+            console.log(pc.cyan('   Reloading renderers...'));
             try {
-              // Import with new timestamp to clear tsx cache
-              embeds = await loadEmbeds(embedsDir);
-              embedsReloaded = true;
+              embeds = await loadRenderers(renderersDir);
+              renderersReloaded = true;
             } catch (error) {
-              console.error(pc.red('   Failed to reload embeds:'), error);
+              console.error(pc.red('   Failed to reload renderers:'), error);
               return;
             }
           }
         }
 
         // Rebuild dependency graph if embeds were reloaded
-        if (embedsReloaded) {
+        if (renderersReloaded) {
           console.log(pc.cyan('   Rebuilding dependency graph...'));
           depGraph = new DependencyGraph(config, embeds);
           await depGraph.build();
@@ -354,11 +575,12 @@ program
         try {
           // Re-initialize datasources (especially for SQLite)
           await closeDatasources(datasources);
-          datasources = initializeDatasources(config);
+          datasources = await initializeDatasources(config, customModules.datasourceTypes);
 
           const result = await build(config, embeds, datasources, {
             verbose: options.verbose,
             specificFiles: Array.from(affectedDocs),
+            customInlineFormats: customModules.inlineFormats,
           });
 
           if (result.totalMarkersUpdated > 0) {

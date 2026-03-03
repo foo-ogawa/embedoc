@@ -7,7 +7,7 @@ import { readFile, writeFile, mkdir, access } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import Handlebars from 'handlebars';
 import type {
-  EmbedifyConfig,
+  EmbedocConfig,
   DatasourceConfig,
   GeneratorConfig,
   GenerateResult,
@@ -129,7 +129,7 @@ async function generateFile(
   record: Record<string, unknown>,
   generatorConfig: GeneratorConfig,
   templatesDir: string,
-  config: EmbedifyConfig,
+  config: EmbedocConfig,
   dryRun = false
 ): Promise<GenerateResult> {
   // Resolve output path
@@ -184,7 +184,7 @@ export async function generateFromDatasource(
   datasourceName: string,
   datasourceConfig: DatasourceConfig,
   datasource: Datasource,
-  config: EmbedifyConfig,
+  config: EmbedocConfig,
   options: {
     dryRun?: boolean;
     verbose?: boolean;
@@ -201,7 +201,7 @@ export async function generateFromDatasource(
   }
 
   // Templates directory
-  const templatesDir = config.templates_dir ?? './templates';
+  const templatesDir = config.templates_dir ?? '.embedoc/templates';
 
   // Get data
   const records = await datasource.getAll();
@@ -252,7 +252,7 @@ export async function generateFromDatasource(
  * Generate files from all datasources
  */
 export async function generateAll(
-  config: EmbedifyConfig,
+  config: EmbedocConfig,
   datasources: Record<string, Datasource>,
   options: {
     dryRun?: boolean;

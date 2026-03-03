@@ -7,7 +7,7 @@ import { readFile } from 'node:fs/promises';
 import { resolve, relative } from 'node:path';
 import { glob } from 'glob';
 import type {
-  EmbedifyConfig,
+  EmbedocConfig,
   EmbedDefinition,
   TargetConfig,
 } from '../types/index.js';
@@ -35,17 +35,19 @@ export interface DependencyNode {
  */
 export class DependencyGraph {
   private nodes: Map<string, DependencyNode> = new Map();
-  private config: EmbedifyConfig;
-  private embedsDir: string;
+  private config: EmbedocConfig;
+  private renderersDir: string;
   private embeds: Record<string, EmbedDefinition>;
 
   constructor(
-    config: EmbedifyConfig,
+    config: EmbedocConfig,
     embeds: Record<string, EmbedDefinition>
   ) {
     this.config = config;
     this.embeds = embeds;
-    this.embedsDir = resolve(config.embeds_dir ?? './embeds');
+    this.renderersDir = resolve(
+      config.renderers_dir ?? config.embeds_dir ?? '.embedoc/renderers'
+    );
   }
 
   /**
@@ -244,8 +246,8 @@ export class DependencyGraph {
       }
     }
 
-    // Embeds directory
-    paths.push(this.embedsDir);
+    // Renderers directory
+    paths.push(this.renderersDir);
 
     return paths;
   }

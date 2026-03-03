@@ -52,8 +52,23 @@ export type {
    * Query result type (array of records).
    */
   QueryResult,
+
+  /**
+   * Definition interface for custom datasource types.
+   */
+  CustomDatasourceDefinition,
+
+  /**
+   * Datasource configuration from embedoc.config.yaml.
+   */
+  DatasourceConfig,
+
+  /**
+   * Parser function for custom inline datasource formats.
+   */
+  InlineFormatParser,
 } from './types/index.js';
 
-// Re-export defineEmbed function
-export { defineEmbed } from './index.js';
+// Re-export helper functions
+export { defineEmbed, defineDatasource } from './index.js';
 

@@ -3,7 +3,7 @@ import { processFile } from '../src/core/processor.js';
 import { writeFile, readFile, mkdir, rm } from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
-import type { TargetConfig, EmbedifyConfig, EmbedDefinition } from '../src/types/index.js';
+import type { TargetConfig, EmbedocConfig, EmbedDefinition } from '../src/types/index.js';
 
 describe('processFile', () => {
   let tempDir: string;
@@ -14,7 +14,7 @@ describe('processFile', () => {
     comment_style: 'html',
   };
 
-  const config: EmbedifyConfig = {
+  const config: EmbedocConfig = {
     version: '1.0',
     targets: [targetConfig],
   };

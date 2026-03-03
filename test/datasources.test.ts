@@ -376,39 +376,39 @@ describe('createDatasource factory', () => {
     await rm(tempDir, { recursive: true });
   });
 
-  it('should create SQLite datasource', () => {
-    const ds = createDatasource({ type: 'sqlite', path: join(tempDir, 'test.db') });
+  it('should create SQLite datasource', async () => {
+    const ds = await createDatasource({ type: 'sqlite', path: join(tempDir, 'test.db') });
     expect(ds.type).toBe('sqlite');
-    ds.close();
+    await ds.close();
   });
 
-  it('should create CSV datasource', () => {
-    const ds = createDatasource({ type: 'csv', path: join(tempDir, 'test.csv') });
+  it('should create CSV datasource', async () => {
+    const ds = await createDatasource({ type: 'csv', path: join(tempDir, 'test.csv') });
     expect(ds.type).toBe('csv');
-    ds.close();
+    await ds.close();
   });
 
-  it('should create JSON datasource', () => {
-    const ds = createDatasource({ type: 'json', path: join(tempDir, 'test.json') });
+  it('should create JSON datasource', async () => {
+    const ds = await createDatasource({ type: 'json', path: join(tempDir, 'test.json') });
     expect(ds.type).toBe('json');
-    ds.close();
+    await ds.close();
   });
 
-  it('should create YAML datasource', () => {
-    const ds = createDatasource({ type: 'yaml', path: join(tempDir, 'test.yaml') });
+  it('should create YAML datasource', async () => {
+    const ds = await createDatasource({ type: 'yaml', path: join(tempDir, 'test.yaml') });
     expect(ds.type).toBe('yaml');
-    ds.close();
+    await ds.close();
   });
 
-  it('should create Glob datasource', () => {
-    const ds = createDatasource({ type: 'glob', pattern: join(tempDir, '*') });
+  it('should create Glob datasource', async () => {
+    const ds = await createDatasource({ type: 'glob', pattern: join(tempDir, '*') });
     expect(ds.type).toBe('glob');
-    ds.close();
+    await ds.close();
   });
 
-  it('should throw error for unknown type', () => {
-    expect(() => createDatasource({ type: 'unknown' as any }))
-      .toThrow('Unknown datasource type');
+  it('should throw error for unknown type', async () => {
+    await expect(createDatasource({ type: 'unknown' }))
+      .rejects.toThrow('Unknown datasource type');
   });
 });
 
@@ -425,7 +425,7 @@ describe('initializeDatasources / closeDatasources', () => {
     await rm(tempDir, { recursive: true });
   });
 
-  it('should initialize multiple datasources from config', () => {
+  it('should initialize multiple datasources from config', async () => {
     const config = {
       version: '1.0',
       targets: [],
@@ -435,24 +435,129 @@ describe('initializeDatasources / closeDatasources', () => {
       }
     };
 
-    const datasources = initializeDatasources(config);
+    const datasources = await initializeDatasources(config);
     
     expect(Object.keys(datasources)).toHaveLength(2);
     expect(datasources['json_ds']?.type).toBe('json');
     expect(datasources['csv_ds']?.type).toBe('csv');
 
-    closeDatasources(datasources);
+    await closeDatasources(datasources);
   });
 
-  it('should handle empty datasources config', () => {
+  it('should handle empty datasources config', async () => {
     const config = {
       version: '1.0',
       targets: [],
     };
 
-    const datasources = initializeDatasources(config);
+    const datasources = await initializeDatasources(config);
     
     expect(Object.keys(datasources)).toHaveLength(0);
+  });
+});
+
+describe('custom datasource types', () => {
+  it('should create datasource from custom type', async () => {
+    const customTypes = {
+      memory: {
+        async create(config: { type: string; [key: string]: unknown }) {
+          const rows = (config['data'] as Record<string, unknown>[]) ?? [];
+          return {
+            type: 'memory',
+            async query() { return rows; },
+            async getAll() { return rows; },
+            async close() {},
+          };
+        },
+      },
+    };
+
+    const ds = await createDatasource(
+      { type: 'memory', data: [{ id: 1, name: 'test' }] },
+      customTypes
+    );
+    expect(ds.type).toBe('memory');
+
+    const result = await ds.getAll();
+    expect(result).toEqual([{ id: 1, name: 'test' }]);
+    await ds.close();
+  });
+
+  it('should prefer custom type over unknown error', async () => {
+    const customTypes = {
+      custom_type: {
+        async create() {
+          return {
+            type: 'custom_type',
+            async query() { return []; },
+            async getAll() { return [{ ok: true }]; },
+            async close() {},
+          };
+        },
+      },
+    };
+
+    const ds = await createDatasource({ type: 'custom_type' }, customTypes);
+    const result = await ds.getAll();
+    expect(result).toEqual([{ ok: true }]);
+    await ds.close();
+  });
+
+  it('should still use built-in types when custom types are provided', async () => {
+    const customTypes = {
+      my_custom: {
+        async create() {
+          return {
+            type: 'my_custom',
+            async query() { return []; },
+            async getAll() { return []; },
+            async close() {},
+          };
+        },
+      },
+    };
+
+    let tempDir: string;
+    tempDir = await mkdtemp(join(tmpdir(), 'embedoc-test-'));
+    await writeFile(join(tempDir, 'test.json'), '[]');
+
+    const ds = await createDatasource(
+      { type: 'json', path: join(tempDir, 'test.json') },
+      customTypes
+    );
+    expect(ds.type).toBe('json');
+    await ds.close();
+    await rm(tempDir, { recursive: true });
+  });
+
+  it('should initialize with custom types via initializeDatasources', async () => {
+    const customTypes = {
+      static: {
+        async create(config: { type: string; [key: string]: unknown }) {
+          const value = config['value'] as string ?? 'default';
+          return {
+            type: 'static',
+            async query() { return [{ value }]; },
+            async getAll() { return [{ value }]; },
+            async close() {},
+          };
+        },
+      },
+    };
+
+    const config = {
+      version: '1.0',
+      targets: [],
+      datasources: {
+        my_static: { type: 'static', value: 'hello' },
+      },
+    };
+
+    const datasources = await initializeDatasources(config, customTypes);
+    expect(Object.keys(datasources)).toHaveLength(1);
+    const result = await datasources['my_static']!.getAll();
+    expect(result).toEqual([{ value: 'hello' }]);
+    await closeDatasources(datasources);
   });
 });
 
