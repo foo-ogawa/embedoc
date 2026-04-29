@@ -154,6 +154,8 @@ npm run embedoc:build
 
 ## CLI Commands
 
+> **Full CLI reference:** [docs/cli-reference.md](./docs/cli-reference.md) | **Machine-readable contract:** [cli-contract.yaml](./cli-contract.yaml)
+
 ```bash
 # Initialize project (creates config, .embedoc/ directory, updates package.json)
 embedoc init
@@ -168,6 +170,9 @@ embedoc build ./path/to/file.md
 
 # Generate new files (specific datasource)
 embedoc generate --datasource tables
+
+# Generate with specific template
+embedoc generate --datasource tables --generator table_doc.hbs
 
 # Run all datasource generators
 embedoc generate --all

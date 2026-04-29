@@ -1,0 +1,327 @@
+# yaml-language-server: $schema=./node_modules/cli-contracts/schemas/cli-contract.schema.json
+cliContracts: 0.1.0
+
+info:
+  title: embedoc CLI
+  version: 0.11.1
+  description: >-
+    In-place document generator that auto-updates marker blocks in documents
+    and source code while preserving manually edited sections. Supports
+    multiple datasources (SQLite, CSV, JSON, YAML, glob), programmable
+    TypeScript renderers, Handlebars file generation, and incremental builds
+    with dependency tracking.
+  license:
+    name: MIT
+  contact:
+    name: foo-ogawa
+    url: https://github.com/foo-ogawa/embedoc
+
+commandSets:
+  embedoc:
+    summary: In-place document generator with marker-based embedding.
+    executable: embedoc
+
+    globalOptions:
+      - name: version
+        aliases: [V]
+        description: Print version and exit.
+        schema:
+          type: boolean
+
+      - name: help
+        aliases: [h]
+        description: Show help and exit.
+        schema:
+          type: boolean
+
+    commands:
+      # ── init ──────────────────────────────────────────
+      init:
+        summary: Initialize embedoc in the current project.
+        description: >-
+          Creates starter configuration and directory structure:
+          embedoc.config.yaml, .embedoc/renderers/index.ts,
+          .embedoc/datasources/index.ts, and .embedoc/templates/.
+          If package.json exists, adds embedoc:build, embedoc:watch,
+          and embedoc:generate npm scripts.
+        usage:
+          - embedoc init
+          - embedoc init --force
+
+        options:
+          - name: force
+            aliases: [f]
+            description: Overwrite existing files.
+            schema:
+              type: boolean
+              default: false
+
+        exits:
+          '0':
+            description: Initialization succeeded.
+            stdout:
+              format: text
+            files:
+              - path: embedoc.config.yaml
+                required: false
+                mediaType: application/yaml
+                encoding: utf-8
+                description: Configuration file.
+              - path: .embedoc/renderers/index.ts
+                required: false
+                mediaType: text/x-typescript
+                encoding: utf-8
+                description: Renderer registration file.
+              - path: .embedoc/datasources/index.ts
+                required: false
+                mediaType: text/x-typescript
+                encoding: utf-8
+                description: Custom datasource registration file.
+              - path: .embedoc/templates/.gitkeep
+                required: false
+                description: Templates directory placeholder.
+
+          '1':
+            description: Initialization failed (write error).
+            stderr:
+              format: text
+
+        x-agent:
+          riskLevel: low
+          requiresConfirmation: false
+          idempotent: true
+          sideEffects:
+            - file_write
+            - directory_create
+
+      # ── build ─────────────────────────────────────────
+      build:
+        summary: Build documents by replacing markers with rendered content.
+        description: >-
+          Loads configuration, initializes datasources, loads TypeScript
+          renderers, and processes all target files (or specific files if
+          provided). Each @embedoc marker block is re-rendered and the
+          content between start/end markers is replaced in-place.
+        usage:
+          - embedoc build
+          - embedoc build --config embedoc.config.yaml
+          - embedoc build ./docs/tables/users.md
+          - embedoc build --dry-run --verbose
+
+        arguments:
+          - name: files
+            description: Specific file paths to process. If omitted, processes all targets from config.
+            schema:
+              type: array
+              items:
+                type: string
+            variadic: true
+            file:
+              mode: readWrite
+              exists: true
+
+        options:
+          - name: config
+            aliases: [c]
+            description: Path to config file (YAML or JSON).
+            valueName: path
+            schema:
+              type: string
+              default: embedoc.config.yaml
+            file:
+              mode: read
+              exists: true
+              mediaType: application/yaml
+              encoding: utf-8
+
+          - name: dry-run
+            aliases: [d]
+            description: Preview changes without writing files.
+            schema:
+              type: boolean
+              default: false
+
+          - name: verbose
+            aliases: [v]
+            description: Enable verbose output.
+            schema:
+              type: boolean
+              default: false
+
+        exits:
+          '0':
+            description: Build succeeded. All markers were processed without errors.
+            stdout:
+              format: text
+
+          '1':
+            description: Build failed (config not found, datasource error, or marker processing error).
+            stderr:
+              format: text
+
+        x-agent:
+          riskLevel: medium
+          requiresConfirmation: false
+          idempotent: true
+          sideEffects:
+            - file_write
+          safeDryRunOption: --dry-run
+          recommendedBeforeUse:
+            - Ensure embedoc.config.yaml exists (run init if needed).
+            - Verify datasource files are accessible.
+
+      # ── generate ──────────────────────────────────────
+      generate:
+        summary: Generate new files from datasource records using Handlebars templates.
+        description: >-
+          Reads datasource records and generates new files using Handlebars
+          templates defined in the generators config. Requires either
+          --datasource to process a specific datasource or --all to process
+          all datasources that have generators configured. Optionally filter
+          by generator template name with --generator.
+        usage:
+          - embedoc generate --datasource tables
+          - embedoc generate --all
+          - embedoc generate --datasource tables --generator table_doc.hbs
+          - embedoc generate --all --dry-run --verbose
+
+        options:
+          - name: config
+            aliases: [c]
+            description: Path to config file (YAML or JSON).
+            valueName: path
+            schema:
+              type: string
+              default: embedoc.config.yaml
+            file:
+              mode: read
+              exists: true
+              mediaType: application/yaml
+              encoding: utf-8
+
+          - name: datasource
+            aliases: [s]
+            description: Specific datasource to process.
+            valueName: name
+            schema:
+              type: string
+
+          - name: generator
+            aliases: [g]
+            description: Specific generator template to use.
+            valueName: name
+            schema:
+              type: string
+
+          - name: all
+            aliases: [a]
+            description: Process all datasources that have generators configured.
+            schema:
+              type: boolean
+              default: false
+
+          - name: dry-run
+            aliases: [d]
+            description: Preview generation without writing files.
+            schema:
+              type: boolean
+              default: false
+
+          - name: verbose
+            aliases: [v]
+            description: Enable verbose output.
+            schema:
+              type: boolean
+              default: false
+
+        exits:
+          '0':
+            description: Generation succeeded.
+            stdout:
+              format: text
+
+          '1':
+            description: >-
+              Generation failed (missing --datasource/--all, config not found,
+              datasource error, or template error).
+            stderr:
+              format: text
+
+        x-agent:
+          riskLevel: medium
+          requiresConfirmation: false
+          idempotent: true
+          sideEffects:
+            - file_write
+          safeDryRunOption: --dry-run
+          recommendedBeforeUse:
+            - Ensure embedoc.config.yaml exists with generators configured.
+            - Verify datasource files are accessible.
+            - Ensure Handlebars templates exist in templates_dir.
+
+      # ── watch ─────────────────────────────────────────
+      watch:
+        summary: Watch files and rebuild on changes with dependency tracking.
+        description: >-
+          Monitors target files, renderers, and datasource files for changes.
+          When a change is detected, rebuilds only affected documents using
+          the dependency graph. Renderer changes trigger a full renderer
+          reload and dependency graph rebuild. Runs until interrupted with
+          SIGINT (Ctrl+C).
+        usage:
+          - embedoc watch
+          - embedoc watch --config embedoc.config.yaml
+          - embedoc watch --verbose
+          - embedoc watch --debug-deps
+
+        options:
+          - name: config
+            aliases: [c]
+            description: Path to config file (YAML or JSON).
+            valueName: path
+            schema:
+              type: string
+              default: embedoc.config.yaml
+            file:
+              mode: read
+              exists: true
+              mediaType: application/yaml
+              encoding: utf-8
+
+          - name: verbose
+            aliases: [v]
+            description: Enable verbose rebuild output.
+            schema:
+              type: boolean
+              default: false
+
+          - name: debug-deps
+            description: Print dependency graph at startup for debugging.
+            schema:
+              type: boolean
+              default: false
+
+        signals:
+          SIGINT:
+            description: Gracefully stops the watcher, closes datasources, and exits.
+
+        exits:
+          '0':
+            description: Watcher stopped gracefully (via SIGINT).
+            stdout:
+              format: text
+
+          '1':
+            description: Watch failed (config not found or initialization error).
+            stderr:
+              format: text
+
+        x-agent:
+          riskLevel: medium
+          requiresConfirmation: false
+          idempotent: true
+          sideEffects:
+            - file_write
+          recommendedBeforeUse:
+            - Ensure embedoc.config.yaml exists (run init if needed).
+            - Verify datasource files are accessible.

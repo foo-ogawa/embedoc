@@ -23,7 +23,7 @@ const program = new Command();
 program
   .name('embedoc')
   .description('In-Place Document Generator')
-  .version('0.11.0');
+  .version('0.11.1');
 
 /**
  * Load configuration file
