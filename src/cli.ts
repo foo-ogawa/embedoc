@@ -4,26 +4,23 @@
  * embedoc CLI
  */
 
-import { Command } from 'commander';
 import { readFile, writeFile, access, mkdir } from 'node:fs/promises';
 import { resolve, relative } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { createRequire } from 'node:module';
 import yaml from 'js-yaml';
 import pc from 'picocolors';
 import chokidar from 'chokidar';
 import { tsImport } from 'tsx/esm/api';
+import { createProgram, type CommandHandlers } from './generated/program.js';
 import type { EmbedocConfig, EmbedDefinition, CustomDatasourceDefinition, InlineFormatParser } from './types/index.js';
 import { initializeDatasources, closeDatasources } from './datasources/index.js';
 import { build } from './core/processor.js';
 import { generateAll } from './core/generator.js';
 import { DependencyGraph } from './core/dependency.js';
 
-const program = new Command();
-
-program
-  .name('embedoc')
-  .description('In-Place Document Generator')
-  .version('0.11.1');
+const require = createRequire(import.meta.url);
+const pkg = require('../package.json') as { version: string };
 
 /**
  * Load configuration file
@@ -154,14 +151,8 @@ async function loadCustomDatasources(
   }
 }
 
-/**
- * init command
- */
-program
-  .command('init')
-  .description('Initialize embedoc in the current project')
-  .option('-f, --force', 'Overwrite existing files')
-  .action(async (options) => {
+const handlers: CommandHandlers = {
+  init: async (options) => {
     try {
       console.log(pc.cyan('📁 Initializing embedoc...\n'));
 
@@ -303,23 +294,14 @@ export const inlineFormats = {
       console.error(error instanceof Error ? error.message : String(error));
       process.exit(1);
     }
-  });
+  },
 
-/**
- * build command
- */
-program
-  .command('build [files...]')
-  .description('Build documents by replacing markers with embed results')
-  .option('-c, --config <path>', 'Path to config file', 'embedoc.config.yaml')
-  .option('-d, --dry-run', 'Dry run without writing files')
-  .option('-v, --verbose', 'Verbose output')
-  .action(async (files: string[], options) => {
+  build: async (files, options) => {
     const startTime = Date.now();
 
     try {
       console.log(pc.cyan('🔧 Loading configuration...'));
-      const config = await loadConfig(options.config);
+      const config = await loadConfig(options.config ?? 'embedoc.config.yaml');
 
       const datasourcesDir = config.datasources_dir ?? '.embedoc/datasources';
       const customModules = await loadCustomDatasources(datasourcesDir);
@@ -374,21 +356,9 @@ program
       console.error(error instanceof Error ? error.message : String(error));
       process.exit(1);
     }
-  });
+  },
 
-/**
- * generate command
- */
-program
-  .command('generate')
-  .description('Generate new files from datasource records')
-  .option('-c, --config <path>', 'Path to config file', 'embedoc.config.yaml')
-  .option('-s, --datasource <name>', 'Specific datasource to process')
-  .option('-g, --generator <name>', 'Specific generator template to use')
-  .option('-a, --all', 'Process all datasources')
-  .option('-d, --dry-run', 'Dry run without writing files')
-  .option('-v, --verbose', 'Verbose output')
-  .action(async (options) => {
+  generate: async (options) => {
     const startTime = Date.now();
 
     try {
@@ -400,7 +370,7 @@ program
       }
 
       console.log(pc.cyan('🔧 Loading configuration...'));
-      const config = await loadConfig(options.config);
+      const config = await loadConfig(options.config ?? 'embedoc.config.yaml');
 
       const datasourcesDir = config.datasources_dir ?? '.embedoc/datasources';
       const customModules = await loadCustomDatasources(datasourcesDir);
@@ -454,21 +424,12 @@ program
       console.error(error instanceof Error ? error.message : String(error));
       process.exit(1);
     }
-  });
+  },
 
-/**
- * watch command
- */
-program
-  .command('watch')
-  .description('Watch files and rebuild on changes')
-  .option('-c, --config <path>', 'Path to config file', 'embedoc.config.yaml')
-  .option('-v, --verbose', 'Verbose output')
-  .option('--debug-deps', 'Show dependency graph for debugging')
-  .action(async (options) => {
+  watch: async (options) => {
     try {
       console.log(pc.cyan('🔧 Loading configuration...'));
-      const config = await loadConfig(options.config);
+      const config = await loadConfig(options.config ?? 'embedoc.config.yaml');
 
       const datasourcesDir = config.datasources_dir ?? '.embedoc/datasources';
       const customModules = await loadCustomDatasources(datasourcesDir);
@@ -623,6 +584,7 @@ program
       console.error(error instanceof Error ? error.message : String(error));
       process.exit(1);
     }
-  });
+  },
+};
 
-program.parse();
+createProgram(handlers, pkg.version).parse();
