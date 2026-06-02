@@ -3,7 +3,7 @@ cli_contracts: 0.1.0
 
 info:
   title: embedoc CLI
-  version: 0.12.0
+  version: 0.14.1
   description: >-
     In-place document generator that auto-updates marker blocks in documents
     and source code while preserving manually edited sections. Supports
