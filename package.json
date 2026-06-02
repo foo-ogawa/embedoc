@@ -1,6 +1,6 @@
 {
   "name": "embedoc",
-  "version": "0.13.4",
+  "version": "0.14.0",
   "description": "In-place document generator that auto-updates marker blocks while preserving manual edits. Supports multiple datasources (SQLite, CSV, JSON, YAML, glob), programmable TypeScript embeds, and incremental builds with dependency tracking.",
   "type": "module",
   "workspaces": [
@@ -16,10 +16,12 @@
     "./package.json": "./package.json"
   },
   "bin": {
-    "embedoc": "./dist/cli.js"
+    "embedoc": "dist/embedoc.bundle.mjs"
   },
   "files": [
     "dist",
+    "dist/embedoc.bundle.mjs",
+    "dist/embedoc.bundle.mjs.map",
     "docs",
     "cli-contract.yaml",
     "README.md",
@@ -27,6 +29,8 @@
   ],
   "scripts": {
     "build": "tsc",
+    "bundle": "node esbuild.bundle.mjs",
+    "bundle:min": "node esbuild.bundle.mjs --minify",
     "dev": "tsc --watch",
     "start": "node dist/cli.js",
     "lint": "eslint src --ext .ts",
@@ -37,7 +41,7 @@
     "docs": "typedoc",
     "cli-contracts:generate": "cli-contracts generate",
     "cli-contracts:validate": "cli-contracts validate",
-    "prepublishOnly": "npm run lint && npm run build && npm run test",
+    "prepublishOnly": "npm run lint && npm run build && npm run bundle:min && npm run test",
     "test:ci": "vitest run"
   },
   "keywords": [
@@ -90,7 +94,8 @@
     "@types/node": "^22.10.2",
     "@typescript-eslint/eslint-plugin": "^8.0.0",
     "@typescript-eslint/parser": "^8.0.0",
-    "cli-contracts": "^0.30.2",
+    "cli-contracts": "^0.32.0",
+    "esbuild": "^0.28.0",
     "eslint": "^8.57.0",
     "typedoc": "^0.28.0",
     "typedoc-plugin-markdown": "^4.9.0",
