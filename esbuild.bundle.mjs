@@ -5,9 +5,12 @@ import { readFileSync, statSync } from "node:fs";
 const pkg = JSON.parse(readFileSync("package.json", "utf8"));
 const minify = process.argv.includes("--minify");
 
-// Native modules and runtime-needed packages must stay external
+// Native modules and runtime-needed packages must stay external.
+// tsx resolves loader paths via import.meta.url relative to its package
+// directory and cannot be inlined into a single-file bundle.
 const externalPackages = [
   "better-sqlite3",
+  "tsx",
 ];
 
 const inlineBuildTimeConstants = {
