@@ -5,7 +5,7 @@
 
 import type { CommentStyle, ParsedMarker, ParsedFrontmatter } from '../types/index.js';
 import type { ParsedInlineData } from './inline-datasource.js';
-import matter from 'gray-matter';
+import yaml from 'js-yaml';
 
 /**
  * Default comment style definitions
@@ -76,21 +76,26 @@ export function resolveVariables(
  * Parse frontmatter from content
  */
 export function parseFrontmatter(content: string): ParsedFrontmatter {
-  const parsed = matter(content);
-
-  // Reconstruct frontmatter part (remove extra newlines)
-  let raw = '';
-  if (Object.keys(parsed.data).length > 0 && parsed.matter) {
-    // Trim extra newlines from matter
-    const cleanMatter = parsed.matter.trim();
-    raw = `---\n${cleanMatter}\n---\n`;
+  const match = content.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?/);
+  if (!match) {
+    return {
+      data: {},
+      content,
+      raw: '',
+    };
   }
 
-  // Remove leading newlines from content
-  const cleanContent = parsed.content.replace(/^\n+/, '');
+  const matterBody = match[1] ?? '';
+  const parsed = yaml.load(matterBody);
+  const data = (parsed && typeof parsed === 'object' && !Array.isArray(parsed))
+    ? parsed as Record<string, unknown>
+    : {};
+
+  const cleanContent = content.slice(match[0].length).replace(/^\n+/, '');
+  const raw = `---\n${matterBody.trim()}\n---\n`;
 
   return {
-    data: parsed.data as Record<string, unknown>,
+    data,
     content: cleanContent,
     raw,
   };
