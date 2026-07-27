@@ -26,7 +26,7 @@ export class SqliteDatasource implements Datasource {
       return rows as QueryResult;
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      throw new Error(`SQLite query failed: ${message}`);
+      throw new Error(`SQLite query failed: ${message}`, { cause: error });
     }
   }
 
