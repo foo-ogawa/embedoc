@@ -1,6 +1,6 @@
 {
   "name": "embedoc",
-  "version": "0.14.2",
+  "version": "0.14.3",
   "description": "In-place document generator that auto-updates marker blocks while preserving manual edits. Supports multiple datasources (SQLite, CSV, JSON, YAML, glob), programmable TypeScript embeds, and incremental builds with dependency tracking.",
   "type": "module",
   "workspaces": [
@@ -33,8 +33,8 @@
     "bundle:min": "node esbuild.bundle.mjs --minify",
     "dev": "tsc --watch",
     "start": "node dist/cli.js",
-    "lint": "eslint src --ext .ts",
-    "lint:fix": "eslint src --ext .ts --fix",
+    "lint": "eslint src",
+    "lint:fix": "eslint src --fix",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
@@ -88,6 +88,7 @@
     "tsx": "^4.19.2"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/better-sqlite3": "^7.6.12",
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^22.10.2",
@@ -95,7 +96,8 @@
     "@typescript-eslint/parser": "^8.0.0",
     "cli-contracts": "^0.32.0",
     "esbuild": "^0.28.0",
-    "eslint": "^8.57.0",
+    "eslint": "^10.8.0",
+    "globals": "^17.8.0",
     "typedoc": "^0.28.0",
     "typedoc-plugin-markdown": "^4.9.0",
     "typescript": "^5.7.2",
