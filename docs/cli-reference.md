@@ -2,7 +2,7 @@
 
 In-place document generator that auto-updates marker blocks in documents and source code while preserving manually edited sections. Supports multiple datasources (SQLite, CSV, JSON, YAML, glob), programmable TypeScript renderers, Handlebars file generation, and incremental builds with dependency tracking.
 
-**Version:** 0.12.0
+**Version:** 0.14.5
 
 ## Table of Contents
 
@@ -65,11 +65,11 @@ embedoc init --force
 #### Extensions
 
 ```yaml
-x-agent: 
+x-agent:
   risk_level: low
   requires_confirmation: false
   idempotent: true
-  side_effects: 
+  side_effects:
     - file_write
     - directory_create
 ```
@@ -124,14 +124,14 @@ embedoc build --dry-run --verbose
 #### Extensions
 
 ```yaml
-x-agent: 
+x-agent:
   risk_level: medium
   requires_confirmation: false
   idempotent: true
-  side_effects: 
+  side_effects:
     - file_write
   safe_dry_run_option: --dry-run
-  recommended_before_use: 
+  recommended_before_use:
     - Ensure embedoc.config.yaml exists (run init if needed).
     - Verify datasource files are accessible.
 ```
@@ -183,14 +183,14 @@ embedoc generate --all --dry-run --verbose
 #### Extensions
 
 ```yaml
-x-agent: 
+x-agent:
   risk_level: medium
   requires_confirmation: false
   idempotent: true
-  side_effects: 
+  side_effects:
     - file_write
   safe_dry_run_option: --dry-run
-  recommended_before_use: 
+  recommended_before_use:
     - Ensure embedoc.config.yaml exists with generators configured.
     - Verify datasource files are accessible.
     - Ensure Handlebars templates exist in templates_dir.
@@ -246,13 +246,13 @@ embedoc watch --debug-deps
 #### Extensions
 
 ```yaml
-x-agent: 
+x-agent:
   risk_level: medium
   requires_confirmation: false
   idempotent: true
-  side_effects: 
+  side_effects:
     - file_write
-  recommended_before_use: 
+  recommended_before_use:
     - Ensure embedoc.config.yaml exists (run init if needed).
     - Verify datasource files are accessible.
 ```
