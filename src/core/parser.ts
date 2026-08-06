@@ -155,9 +155,20 @@ export function parseMarkers(
     const endMatch = endPattern.exec(remainingContent);
 
     if (endMatch) {
-      const endMarkerLine = endMatch[0];
-      const endIndex = afterStart + endMatch.index + endMarkerLine.length;
-      const existingContent = remainingContent.slice(0, endMatch.index);
+      // The end marker's own indentation sits in front of the match. It belongs to the marker
+      // line, not to the embedded content: leaving it in existingContent both hands embeds a
+      // stray trailing indent and drops it on rewrite, since the marker is re-emitted verbatim
+      // after a newline. Claim it only when it is the whole of its line, so an inline end marker
+      // (`| cell |`, mid-line) keeps the text before it as content.
+      const indentMatch = /(?:^|\n)([ \t]+)$/.exec(
+        remainingContent.slice(0, endMatch.index)
+      );
+      const endMarkerIndent = indentMatch?.[1] ?? '';
+      const endMarkerStart = endMatch.index - endMarkerIndent.length;
+
+      const endMarkerLine = endMarkerIndent + endMatch[0];
+      const endIndex = afterStart + endMarkerStart + endMarkerLine.length;
+      const existingContent = remainingContent.slice(0, endMarkerStart);
 
       if (templateName) {
         markers.push({

@@ -109,6 +109,45 @@ describe('processFile', () => {
     });
   });
 
+  describe('indented markers', () => {
+    it('should keep the end marker at the indentation it was written at', async () => {
+      const content = `  <!--@embedoc:test_embed-->\n  old\n  <!--@embedoc:end-->`;
+      await writeFile(testFile, content);
+
+      const embeds: Record<string, EmbedDefinition> = {
+        test_embed: {
+          render: async () => ({ content: '  new' }),
+        },
+      };
+
+      await processFile(testFile, content, targetConfig, embeds, {}, config, false);
+
+      const result = await readFile(testFile, 'utf-8');
+      expect(result).toBe(
+        `  <!--@embedoc:test_embed-->\n  new\n  <!--@embedoc:end-->`
+      );
+    });
+
+    it('should not hand the end marker indentation to the embed as content', async () => {
+      const content = `  <!--@embedoc:test_embed-->\n  old\n  <!--@embedoc:end-->`;
+      await writeFile(testFile, content);
+
+      let seen: string | undefined;
+      const embeds: Record<string, EmbedDefinition> = {
+        test_embed: {
+          render: async (ctx) => {
+            seen = ctx.existingContent;
+            return { content: '  new' };
+          },
+        },
+      };
+
+      await processFile(testFile, content, targetConfig, embeds, {}, config, false);
+
+      expect(seen).toBe('\n  old\n');
+    });
+  });
+
   describe('existing content preservation (null/undefined return)', () => {
     it('should keep existing content when embed returns null', async () => {
       const content = `<!--@embedoc:test_embed id="1"-->\nexisting content\n<!--@embedoc:end-->`;
