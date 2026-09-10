@@ -1,6 +1,6 @@
 {
   "name": "embedoc",
-  "version": "0.14.8",
+  "version": "0.14.9",
   "description": "In-place document generator that auto-updates marker blocks while preserving manual edits. Supports multiple datasources (SQLite, CSV, JSON, YAML, glob), programmable TypeScript embeds, and incremental builds with dependency tracking.",
   "type": "module",
   "workspaces": [
@@ -105,7 +105,6 @@
   },
   "overrides": {
     "js-yaml": "^4.3.2",
-    "csv-parse": "^7.0.2",
     "vitest": "^4.1.11"
   }
 }

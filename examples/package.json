@@ -5,7 +5,7 @@
   "description": "Example embeds for embedoc",
   "type": "module",
   "dependencies": {
-    "embedoc": "*",
+    "embedoc": "file:..",
     "js-yaml": "^4.1.0"
   },
   "devDependencies": {
@@ -13,4 +13,3 @@
     "@types/node": "^22.10.2"
   }
 }
-
