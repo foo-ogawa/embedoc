@@ -1,10 +1,11 @@
 /**
- * A build changes nothing outside the markers (#43), and markers or
- * renderers it cannot honour fail the build (#44).
+ * A build changes nothing outside the markers (#43), markers or
+ * renderers it cannot honour fail the build (#44), and renderers can
+ * import embedoc in CommonJS and ES module projects.
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, mkdir, readFile, rm, symlink, writeFile } from 'node:fs/promises';
 import { execFile } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
@@ -36,6 +37,28 @@ async function build(name: string, text: string, config: EmbedocConfig = { versi
   const result = await processFile(file, text, target, embeds, {}, config);
   return { result, written: await readFile(file, 'utf-8') };
 }
+
+function cli(args: string[], cwd: string): Promise<{ code: number; output: string }> {
+  return new Promise((done) => {
+    execFile('node', [CLI, ...args], { cwd }, (error, stdout, stderr) => {
+      done({ code: error ? (typeof error.code === 'number' ? error.code : 1) : 0, output: stdout + stderr });
+    });
+  });
+}
+
+async function project(renderersIndex: string, doc: string): Promise<void> {
+  await mkdir(join(dir, '.embedoc', 'renderers'), { recursive: true });
+  await writeFile(join(dir, '.embedoc', 'renderers', 'index.ts'), renderersIndex);
+  await writeFile(
+    join(dir, 'embedoc.config.yaml'),
+    'version: "1.0"\ntargets:\n  - pattern: "./*.md"\n    comment_style: html\n'
+  );
+  await writeFile(join(dir, 'doc.md'), doc);
+}
+
+const goodRenderers =
+  "export const embeds = { hello: { async render() { return { content: 'hello' }; } } };\n";
+const doc = '<!--@embedoc:hello-->\nold\n<!--@embedoc:end-->\n';
 
 describe('outside the markers, a build changes nothing (#43)', () => {
   const marker = '<!--@embedoc:hello-->\nold\n<!--@embedoc:end-->';
@@ -88,28 +111,6 @@ describe('markers and renderers the build cannot honour fail it (#44)', () => {
     expect(written).toBe(text); // nothing is written for a failed file
   });
 
-  function cli(args: string[], cwd: string): Promise<{ code: number; output: string }> {
-    return new Promise((done) => {
-      execFile('node', [CLI, ...args], { cwd }, (error, stdout, stderr) => {
-        done({ code: error ? (typeof error.code === 'number' ? error.code : 1) : 0, output: stdout + stderr });
-      });
-    });
-  }
-
-  async function project(renderersIndex: string, doc: string): Promise<void> {
-    await mkdir(join(dir, '.embedoc', 'renderers'), { recursive: true });
-    await writeFile(join(dir, '.embedoc', 'renderers', 'index.ts'), renderersIndex);
-    await writeFile(
-      join(dir, 'embedoc.config.yaml'),
-      'version: "1.0"\ntargets:\n  - pattern: "./*.md"\n    comment_style: html\n'
-    );
-    await writeFile(join(dir, 'doc.md'), doc);
-  }
-
-  const goodRenderers =
-    "export const embeds = { hello: { async render() { return { content: 'hello' }; } } };\n";
-  const doc = '<!--@embedoc:hello-->\nold\n<!--@embedoc:end-->\n';
-
   it('exits 0 when every marker has a renderer', async () => {
     await project(goodRenderers, doc);
     const { code } = await cli(['build'], dir);
@@ -130,4 +131,27 @@ describe('markers and renderers the build cannot honour fail it (#44)', () => {
     expect(output).toContain('Could not load renderers');
     expect(await readFile(join(dir, 'doc.md'), 'utf-8')).toBe(doc);
   }, 60_000);
+});
+
+describe('renderers import embedoc in CommonJS and ES module projects', () => {
+  const renderers =
+    "import { defineEmbed } from 'embedoc';\n" +
+    "export const embeds = { hello: defineEmbed({ async render() { return { content: 'hello' }; } }) };\n";
+  const projects: [string, Record<string, string>][] = [
+    ['CommonJS project (no "type")', {}],
+    ['ES module project ("type": "module")', { type: 'module' }],
+  ];
+
+  for (const [name, type] of projects) {
+    it(name, async () => {
+      await project(renderers, doc);
+      await writeFile(join(dir, 'package.json'), JSON.stringify({ name: 'consumer', private: true, ...type }));
+      await mkdir(join(dir, 'node_modules'));
+      await symlink(resolve('.'), join(dir, 'node_modules', 'embedoc'), 'dir');
+      const { code, output } = await cli(['build'], dir);
+      expect(output).not.toContain('Could not load renderers');
+      expect(code).toBe(0);
+      expect(await readFile(join(dir, 'doc.md'), 'utf-8')).toBe('<!--@embedoc:hello-->\nhello\n<!--@embedoc:end-->\n');
+    }, 60_000);
+  }
 });

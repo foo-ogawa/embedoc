@@ -134,6 +134,8 @@ export const embeds = {
 
 > **Note**: embedoc can directly import TypeScript files, so **no compilation is required**.
 
+> **Note**: Renderers can `import { defineEmbed } from 'embedoc'` in both ES module projects (`"type": "module"` in `package.json`) and CommonJS projects (no `"type"` field).
+
 ### 4. Add Markers to Your Document
 
 ```markdown
