@@ -3,8 +3,8 @@
  * Generate new files from datasource records using Handlebars templates
  */
 
-import { readFile, writeFile, mkdir, access } from 'node:fs/promises';
-import { dirname, join } from 'node:path';
+import { readFile, writeFile, mkdir, access, unlink } from 'node:fs/promises';
+import { dirname, join, resolve } from 'node:path';
 import Handlebars from 'handlebars';
 import type {
   EmbedocConfig,
@@ -12,8 +12,8 @@ import type {
   GeneratorConfig,
   GenerateResult,
   Datasource,
-  ApiSymbolKind,
 } from '../types/index.js';
+import { glob } from 'glob';
 import { renderApiPage } from '../helpers/api-markdown.js';
 
 /**
@@ -82,19 +82,11 @@ function registerHelpers(): void {
   });
 
   // api_page: Page of one record of a `typescript` datasource
-  // {{api_page this own_file_kinds="class,interface,function" index_file="README.md"}}
+  // {{api_page this index_file="README.md"}}
   Handlebars.registerHelper('api_page', (record: Record<string, unknown>, options: Handlebars.HelperOptions) => {
-    const hash = options.hash as Record<string, unknown>;
-    const kinds = hash['own_file_kinds'];
-    const indexFile = hash['index_file'];
+    const indexFile = (options.hash as Record<string, unknown>)['index_file'];
     return new Handlebars.SafeString(
-      renderApiPage(record, {
-        ownFileKinds:
-          typeof kinds === 'string'
-            ? (kinds.split(',').map((k) => k.trim()).filter(Boolean) as ApiSymbolKind[])
-            : undefined,
-        indexFile: typeof indexFile === 'string' ? indexFile : undefined,
-      })
+      renderApiPage(record, { indexFile: typeof indexFile === 'string' ? indexFile : undefined })
     );
   });
 }
@@ -219,6 +211,31 @@ function selectRecords(
 }
 
 /**
+ * Delete the files that match a generator's output_path (placeholders read
+ * as `*`) and are not among the files it is responsible for in this run.
+ */
+async function pruneOutputs(
+  outputPath: string,
+  keep: Set<string>,
+  dryRun: boolean
+): Promise<GenerateResult[]> {
+  const pattern = outputPath.replace(/\{[^}]+\}/g, '*');
+  const results: GenerateResult[] = [];
+  for (const file of (await glob(pattern, { nodir: true })).sort()) {
+    if (keep.has(resolve(file))) continue;
+    const result: GenerateResult = { filePath: file, success: true, skipped: false, removed: true };
+    try {
+      if (!dryRun) await unlink(file);
+    } catch (error) {
+      result.success = false;
+      result.error = error instanceof Error ? error : new Error(String(error));
+    }
+    results.push(result);
+  }
+  return results;
+}
+
+/**
  * Generate files from datasource
  */
 export async function generateFromDatasource(
@@ -263,6 +280,7 @@ export async function generateFromDatasource(
     }
 
     // Generate file for each selected record
+    const written = new Set<string>();
     for (const record of selectRecords(records, generatorConfig.where)) {
       const result = await generateFile(
         record,
@@ -273,6 +291,7 @@ export async function generateFromDatasource(
       );
 
       results.push(result);
+      written.add(resolve(result.filePath));
 
       if (options.verbose) {
         if (result.skipped) {
@@ -282,6 +301,14 @@ export async function generateFromDatasource(
         } else {
           console.log(`    Failed: ${result.filePath} - ${result.error?.message}`);
         }
+      }
+    }
+
+    if (generatorConfig.prune) {
+      const removed = await pruneOutputs(generatorConfig.output_path, written, options.dryRun ?? false);
+      results.push(...removed);
+      if (options.verbose) {
+        for (const r of removed) console.log(`    Removed: ${r.filePath}`);
       }
     }
   }

@@ -212,24 +212,41 @@ function resolveLinks(records: ApiSymbol[]): void {
   const byName = new Map(records.map((r) => [r.name, r]));
   for (const record of records) {
     const texts: string[] = [];
+    const types: string[] = [...record.extends, ...record.implements];
     const collect = (summary: string, tags: ApiTag[]) => {
       texts.push(summary, ...tags.map((t) => t.text));
+    };
+    const collectTypeParameters = (params: ApiTypeParameter[]) => {
+      for (const p of params) types.push(p.constraint ?? '', p.default ?? '');
     };
     const collectSignature = (sig: ApiSignature) => {
       collect(sig.summary, sig.tags);
       texts.push(...sig.parameters.map((p) => p.description));
-      if (sig.returns) texts.push(sig.returns.description);
+      types.push(...sig.parameters.map((p) => p.type));
+      collectTypeParameters(sig.typeParameters);
+      if (sig.returns) {
+        texts.push(sig.returns.description);
+        types.push(sig.returns.type);
+      }
     };
     collect(record.summary, record.tags);
+    collectTypeParameters(record.typeParameters);
     record.signatures.forEach(collectSignature);
     for (const member of record.members) {
       collect(member.summary, member.tags);
+      if (member.type !== null) types.push(member.type);
       member.signatures.forEach(collectSignature);
     }
     const found = new Map<string, ApiLinkTarget>();
     const targets: string[] = record.referenceOf ? [record.referenceOf] : [];
     for (const text of texts) {
       for (const match of text.matchAll(INLINE_LINK)) targets.push(match[1]!);
+    }
+    // Names of exported symbols used in types, so a renderer can link them.
+    for (const type of types) {
+      for (const part of splitTypeText(type)) {
+        if (part.identifier) targets.push(part.text);
+      }
     }
     for (const target of targets) {
       if (found.has(target)) continue;
@@ -241,11 +258,34 @@ function resolveLinks(records: ApiSymbol[]): void {
         name: symbol.name,
         kind: symbol.kind,
         kindDir: symbol.kindDir,
+        page: symbol.page,
         member: rest.length > 0 ? rest.join('.') : null,
       });
     }
     record.links = [...found.values()];
   }
+}
+
+/**
+ * Split type text into identifiers and the text between them. Identifiers
+ * inside string literals are not identifiers. A renderer links the identifiers
+ * that name exported symbols; the datasource lists them in `links`.
+ */
+export function splitTypeText(text: string): { text: string; identifier: boolean }[] {
+  const parts: { text: string; identifier: boolean }[] = [];
+  const pattern = /(['"`])(?:\\.|(?!\1)[^\\])*\1|[A-Za-z_$][\w$]*/g;
+  let last = 0;
+  for (const match of text.matchAll(pattern)) {
+    const isIdentifier = match[1] === undefined;
+    // A property name after `.` (as in `typeof x.y`) is not a type name.
+    const afterDot = text[match.index - 1] === '.';
+    if (!isIdentifier || afterDot) continue;
+    if (match.index > last) parts.push({ text: text.slice(last, match.index), identifier: false });
+    parts.push({ text: match[0], identifier: true });
+    last = match.index + match[0].length;
+  }
+  if (last < text.length) parts.push({ text: text.slice(last), identifier: false });
+  return parts;
 }
 
 /** Order of UTF-16 code units (so `Middleware.ts` comes before `decorators.ts`). */
@@ -262,6 +302,8 @@ function compareText(a: string, b: string): number {
 }
 
 interface ExtractOptions {
+  /** Kinds whose symbols get a page of their own. */
+  pages: Set<ApiSymbolKind>;
   excludeInternal: boolean;
   excludePrivate: boolean;
   excludeExternals: boolean;
@@ -365,6 +407,9 @@ class ApiExtractor {
         signatures: [],
         members: [],
         source: this.sourceOf(declaration),
+        abstract: false,
+        hasPage: false,
+        page: null,
         referenceOf: of.name,
         links: [],
       },
@@ -403,6 +448,10 @@ class ApiExtractor {
       signatures: [],
       members: [],
       source: this.sourceOf(declaration),
+      abstract:
+        ts.isClassDeclaration(declaration) && this.modifiers(declaration).has(ts.SyntaxKind.AbstractKeyword),
+      hasPage: this.options.pages.has(kind),
+      page: this.options.pages.has(kind) ? `${KIND_INFO[kind].dir}/${name}.md` : null,
       referenceOf: null,
       links: [],
     };
@@ -566,9 +615,7 @@ class ApiExtractor {
 
   private parameters(params: TS.NodeArray<TS.ParameterDeclaration>, doc: ParsedDoc): ApiParameter[] {
     const { ts } = this;
-    return params
-      .filter((p) => !(ts.isIdentifier(p.name) && p.name.text === 'this'))
-      .map((p) => ({
+    return params.map((p) => ({
         name: p.name.getText(),
         type: this.typeText(p.type, () => this.checker.getTypeAtLocation(p)),
         optional: p.questionToken !== undefined || p.initializer !== undefined,
@@ -919,6 +966,15 @@ export class TypeScriptDatasource implements Datasource {
     if (sort !== undefined && sort !== 'source-order' && sort !== 'alphabetical') {
       throw new Error('TypeScript datasource "sort" must be "source-order" or "alphabetical"');
     }
+    const pages = config['pages'];
+    if (
+      pages !== undefined &&
+      (!Array.isArray(pages) || !pages.every((k) => typeof k === 'string' && k in KIND_INFO))
+    ) {
+      throw new Error(
+        `TypeScript datasource "pages" must be a list of kinds (${Object.keys(KIND_INFO).join(', ')})`
+      );
+    }
     for (const key of ['exclude_internal', 'exclude_private', 'exclude_externals']) {
       if (config[key] !== undefined && typeof config[key] !== 'boolean') {
         throw new Error(`TypeScript datasource "${key}" must be true or false`);
@@ -954,6 +1010,7 @@ export class TypeScriptDatasource implements Datasource {
       excludeInternal: this.config.exclude_internal ?? true,
       excludePrivate: this.config.exclude_private ?? true,
       excludeExternals: this.config.exclude_externals ?? true,
+      pages: new Set(this.config.pages ?? []),
       sourceLinkTemplate: this.config.source_link_template ?? null,
       gitRevision: this.config.git_revision ?? null,
       sort: this.config.sort ?? 'source-order',

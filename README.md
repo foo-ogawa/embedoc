@@ -289,12 +289,14 @@ datasources:
     entry_points: ["./src/index.ts"]
     source_link_template: "https://github.com/OWNER/REPO/blob/{gitRevision}/{path}#L{line}"
     git_revision: main
+    pages: [class, interface, function]
     generators:
       - output_path: "./docs/api/{kindDir}/{name}.md"
         template: api_page.hbs
         overwrite: true
         where:
-          kind: [class, interface, function]
+          hasPage: "true"
+        prune: true
 
 # Renderer directory (TypeScript) - default: ".embedoc/renderers"
 renderers_dir: ".embedoc/renderers"
@@ -593,6 +595,7 @@ datasources:
       - "./src/index.ts"
     source_link_template: "https://github.com/OWNER/REPO/blob/{gitRevision}/{path}#L{line}"
     git_revision: main
+    pages: [class, interface, function]
 ```
 
 | Option | Default | Description |
@@ -605,6 +608,7 @@ datasources:
 | `source_link_template` | none | Source link with `{path}` (relative to the working directory), `{line}` and `{gitRevision}` |
 | `git_revision` | none | Value of `{gitRevision}`; required when the template uses it |
 | `sort` | `source-order` | Record order: `source-order` (file path, then position) or `alphabetical` |
+| `pages` | none | Kinds whose symbols get a page of their own (`page` = `<kindDir>/<name>.md`); the others are written in full on the index. This is the only place that decides which symbols have pages: the renderers and the generator read `page` / `hasPage` |
 
 The `typescript` package (>=5.0.0 <7.0.0) must be installed in your project; it is an optional
 peer dependency of embedoc. `git_revision` is a fixed value (such as a branch name), not read from
@@ -623,17 +627,22 @@ git, so the same sources always give the same records and the same Markdown.
 | `signatures` | Overload signatures of a function (parameters, return type, documentation) |
 | `members` | Constructors, properties, accessors, methods and index signatures of a class, interface, object type or variable, and members of an enum |
 | `source` | `file`, `path`, `line` and `url` of the declaration |
+| `abstract` | `true` for an abstract class |
+| `hasPage`, `page` | Whether the symbol has a page of its own, and its path (`classes/Store.md`) or `null` |
+| `links` | Exported symbols the record refers to (`{@link ...}` targets and names used in its types), with their `page` |
 
 A variable initialized with an arrow function or function expression (and no type annotation)
-is a `function`. `{@link ...}` targets that name exported symbols are listed in `links`, so a
-renderer of one record can link them.
+is a `function`. `this` parameters are kept. `{@link ...}` targets and type names that refer to
+exported symbols are listed in `links`, so a renderer of one record can link them.
 
 **Rendering**: `renderApiIndex(records, options)` writes the index (symbols grouped by kind and
-`@category`), and `renderApiPage(record, options)` writes the page of one symbol. Options:
+`@category`; symbols with a page are listed as links to it), and `renderApiPage(record, options)`
+writes the page of one symbol. Types link to the pages of the exported symbols they name. Member
+tables carry each member's whole documentation (deprecation, summary, tags, default, examples) on one
+row, and every `|` in a table cell is escaped, so rows always have the columns of their header. Options:
 
 | Option | Default | Description |
 |--------|---------|-------------|
-| `ownFileKinds` | none | Kinds that get a page of their own at `<kindDir>/<name>.md`; the others are written in full on the index |
 | `categoryOrder` | none | Category order; `*` marks where unlisted categories go (alphabetically). Symbols without `@category` are in `Other` |
 | `indexFile` | `README.md` | File name of the index page, for links from symbol pages |
 | `headingLevel` | `2` | Heading level of the kind groups on the index |
@@ -649,17 +658,15 @@ export default defineEmbed({
   async render(ctx) {
     const records = await ctx.datasources['api'].getAll();
     return {
-      content: renderApiIndex(records, {
-        ownFileKinds: ['class', 'interface', 'function'],
-        categoryOrder: ['Core', '*'],
-      }),
+      content: renderApiIndex(records, { categoryOrder: ['Core', '*'] }),
     };
   },
 });
 ```
 
-Symbol pages are written by a generator whose template uses the `api_page` helper
-(`where` picks the kinds that get a page):
+Symbol pages are written by a generator whose template uses the `api_page` helper. `where`
+picks the records that have a page, and `prune` deletes the pages of symbols that are no longer
+exported:
 
 ```yaml
     generators:
@@ -667,12 +674,13 @@ Symbol pages are written by a generator whose template uses the `api_page` helpe
         template: api_page.hbs
         overwrite: true
         where:
-          kind: [class, interface, function]
+          hasPage: "true"
+        prune: true
 ```
 
 ```handlebars
 {{!-- .embedoc/templates/api_page.hbs --}}
-{{api_page this own_file_kinds="class,interface,function" index_file="README.md"}}
+{{api_page this index_file="README.md"}}
 ```
 
 Run `embedoc generate --datasource api` for the pages, then `embedoc build` for the index.
@@ -979,6 +987,11 @@ datasources:
 `where` maps a record field to a value or a list of values; a file is generated only for the
 records whose every listed field equals (as a string) one of its values.
 
+`prune: true` deletes the files that match `output_path` (with each `{placeholder}` read as `*`)
+and that the generator did not write in this run, such as pages of records that are gone. Use it
+only for a directory that holds nothing but this generator's files. `generate --dry-run` lists
+them without deleting.
+
 ### Template (Handlebars)
 
 ```handlebars
@@ -1018,7 +1031,7 @@ Created: {{today}}
 | `{{json value}}` | JSON (2-space indent) | `{"a": 1}` |
 | `{{uppercase s}}`, `{{lowercase s}}`, `{{capitalize s}}` | Case conversion | `USERS`, `users`, `Users` |
 | `{{replace s search replacement}}` | Replace every match of a regular expression | `{{replace name "_" "-"}}` |
-| `{{api_page this own_file_kinds="..." index_file="..."}}` | Page of a `typescript` datasource record (see [TypeScript](#typescript-public-api)) | Markdown |
+| `{{api_page this index_file="..."}}` | Page of a `typescript` datasource record (see [TypeScript](#typescript-public-api)) | Markdown |
 
 ### Run Generation
 

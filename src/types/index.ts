@@ -36,6 +36,12 @@ export interface GeneratorConfig {
    * Example: `{ kind: ['class', 'interface'] }`.
    */
   where?: Record<string, string | string[]>;
+  /**
+   * Delete the files that match `output_path` (each `{placeholder}` read as `*`)
+   * and that this generator did not write in this run, e.g. pages of symbols that
+   * are no longer exported. Use it only for a directory that holds nothing else.
+   */
+  prune?: boolean;
 }
 
 /**
@@ -341,6 +347,13 @@ export interface TypeScriptDatasourceConfig extends DatasourceConfig {
   git_revision?: string;
   /** Record order: `source-order` (file path, then position) or `alphabetical` (default: source-order). */
   sort?: 'source-order' | 'alphabetical';
+  /**
+   * Kinds whose symbols get a page of their own (`page` = `<kindDir>/<name>.md`,
+   * `hasPage` = true), e.g. `[class, interface, function]`. Default: none.
+   * The renderers and the generator read `page` / `hasPage`, so this list is the
+   * only place that decides which symbols have pages.
+   */
+  pages?: ApiSymbolKind[];
 }
 
 /** Kind of an exported API symbol. A `reference` is a second exported name of a symbol. */
@@ -444,6 +457,8 @@ export type ApiLinkTarget = {
   name: string;
   kind: ApiSymbolKind;
   kindDir: string;
+  /** Page of the target symbol (its `page`), or null when it is on the index. */
+  page: string | null;
   /** Member part of the target (`use` in `DBModel.use`), or null. */
   member: string | null;
 };
@@ -477,9 +492,18 @@ export type ApiSymbol = {
   /** Members of a class, interface, enum, or object type alias. */
   members: ApiMember[];
   source: ApiSource;
+  /** True for an `abstract` class. */
+  abstract: boolean;
+  /** Whether the symbol has a page of its own (its kind is in the datasource's `pages`). */
+  hasPage: boolean;
+  /** Path of its page relative to the API root (`classes/Store.md`), or null. */
+  page: string | null;
   /** For a `reference` (`export { A as B }`): the name `A` is documented under; null otherwise. */
   referenceOf: string | null;
-  /** `{@link ...}` targets (and `referenceOf`) that resolve to exported symbols of the datasource. */
+  /**
+   * Exported symbols this symbol refers to: `{@link ...}` targets, `referenceOf`,
+   * and names used in its types (parameters, returns, properties, heritage).
+   */
   links: ApiLinkTarget[];
 };
 
@@ -922,6 +946,8 @@ export interface GenerateResult {
   success: boolean;
   /** Whether skipped (existing file without overwrite) */
   skipped: boolean;
+  /** Whether the file was deleted by `prune` (or would be, in a dry run) */
+  removed?: boolean;
   /** Error (if any) */
   error?: Error;
 }

@@ -4,6 +4,7 @@
  */
 
 import type {
+  ApiLinkTarget,
   ApiMember,
   ApiSignature,
   ApiSource,
@@ -13,18 +14,12 @@ import type {
   ApiTypeParameter,
   QueryResult,
 } from '../types/index.js';
-import { INLINE_LINK } from '../datasources/typescript.js';
+import { INLINE_LINK, splitTypeText } from '../datasources/typescript.js';
 
 /**
  * Options for {@link renderApiIndex} and {@link renderApiPage}.
  */
 export interface ApiMarkdownOptions {
-  /**
-   * Kinds whose symbols get a page of their own at `<kindDir>/<name>.md`
-   * (e.g. `['class', 'interface', 'function']`). Symbols of the other kinds are
-   * written in full on the index page. Default: none, so everything is on the index.
-   */
-  ownFileKinds?: ApiSymbolKind[];
   /**
    * Order of category headings. `*` marks where the categories that are not
    * listed go (alphabetically); without `*` they go last. Symbols without a
@@ -62,6 +57,9 @@ const MEMBER_GROUPS: { kind: ApiMember['kind']; title: string }[] = [
 
 const DEFAULT_CATEGORY = 'Other';
 
+/** Tags a table cell shows in their own way. */
+const CELL_TAGS = new Set(['example', 'deprecated', 'see', 'default', 'defaultValue', 'internal', 'category']);
+
 /** Tags rendered in their own way (not as a generic section). */
 const SPECIAL_TAGS = new Set([
   'example',
@@ -75,7 +73,6 @@ const SPECIAL_TAGS = new Set([
 ]);
 
 interface Context {
-  ownFileKinds: Set<ApiSymbolKind>;
   categoryOrder: string[];
   indexFile: string;
   /** True when rendering a page of its own (links are relative to `<kindDir>/`). */
@@ -121,22 +118,35 @@ function code(text: string): string {
   return `${fence}${pad}${flat}${pad}${fence}`;
 }
 
-/** A table cell: one line, pipes escaped. */
+/** Text for a table cell: on one line (blank lines become `<br><br>`). */
 function cell(text: string): string {
   return text
     .replace(/\r?\n\s*\r?\n/g, '<br><br>')
     .replace(/\s*\r?\n\s*/g, ' ')
-    .replace(/\|/g, '\\|')
     .trim();
 }
 
-function linkPath(ctx: Context, name: string, kind: ApiSymbolKind, kindDir: string, member: string | null): string {
-  if (ctx.ownFileKinds.has(kind)) {
-    const file = `${kindDir}/${name}.md`;
-    const path = ctx.onOwnPage ? `../${file}` : file;
-    return member ? `${path}#${anchor(member)}` : path;
+/**
+ * A table row. Every table is written through here: an unescaped `|` in any
+ * cell (in code spans too, which GitHub also splits on) is escaped, so a row
+ * always has as many columns as its header.
+ */
+function tableRow(cells: string[]): string {
+  return `| ${cells.map((c) => c.replace(/(?<!\\)\|/g, '\\|')).join(' | ')} |`;
+}
+
+/** A table: header row, separator, rows. */
+function table(header: string[], rows: string[][]): string {
+  return [tableRow(header), tableRow(header.map(() => '------')), ...rows.map(tableRow)].join('\n');
+}
+
+/** Link to an exported symbol: its page, or its heading on the index. */
+function linkPath(ctx: Context, link: Pick<ApiLinkTarget, 'name' | 'page' | 'member'>): string {
+  if (link.page !== null) {
+    const path = ctx.onOwnPage ? `../${link.page}` : link.page;
+    return link.member ? `${path}#${anchor(link.member)}` : path;
   }
-  const target = `#${anchor(name)}`;
+  const target = `#${anchor(link.name)}`;
   return ctx.onOwnPage ? `../${ctx.indexFile}${target}` : target;
 }
 
@@ -146,8 +156,33 @@ function resolveText(ctx: Context, text: string): string {
     const shown = label.trim() || target;
     const link = ctx.symbol.links.find((l) => l.target === target);
     if (!link) return code(shown);
-    return `[${code(shown)}](${linkPath(ctx, link.name, link.kind, link.kindDir, link.member)})`;
+    return `[${code(shown)}](${linkPath(ctx, link)})`;
   });
+}
+
+/**
+ * A type as inline code, with the names of exported symbols linked to them
+ * (`[`Column`](../interfaces/Column.md)` + `` `<V>` ``).
+ */
+function typeCode(ctx: Context, type: string): string {
+  const out: string[] = [];
+  let pending = '';
+  const flush = () => {
+    if (pending.trim() !== '') out.push(code(pending));
+    else if (pending !== '') out.push(' ');
+    pending = '';
+  };
+  for (const part of splitTypeText(type)) {
+    const link = part.identifier ? ctx.symbol.links.find((l) => l.target === part.text) : undefined;
+    if (!link || link.name === ctx.symbol.name) {
+      pending += part.text;
+      continue;
+    }
+    flush();
+    out.push(`[${code(part.text)}](${linkPath(ctx, link)})`);
+  }
+  flush();
+  return out.join('');
 }
 
 function definedIn(source: ApiSource): string {
@@ -199,14 +234,41 @@ function docBlocks(ctx: Context, summary: string, tags: ApiTag[], level: number)
   return out;
 }
 
-/** Description used in a table cell, with `@default` / `@deprecated` folded in. */
+/** An `@example` on one line: its title, then each code line as inline code. */
+function inlineExample(text: string): string {
+  const out: string[] = [];
+  let inCode = false;
+  for (const line of text.split('\n')) {
+    if (/^\s*(```|~~~)/.test(line)) {
+      inCode = !inCode;
+      continue;
+    }
+    if (line.trim() === '') continue;
+    out.push(inCode ? code(line) : line.trim());
+  }
+  return out.join(' ');
+}
+
+/**
+ * Description in a table cell: everything the documentation says, on one line
+ * (deprecation, summary, other tags, default, examples, see-also).
+ */
 function cellDescription(ctx: Context, summary: string, tags: ApiTag[]): string {
   const parts: string[] = [];
   for (const t of tagsNamed(tags, 'deprecated')) parts.push(`**Deprecated**${t.text ? ` ${t.text}` : ''}`);
   if (summary) parts.push(summary);
+  for (const t of tags) {
+    if (CELL_TAGS.has(t.tag)) continue;
+    parts.push(`**${t.tag.charAt(0).toUpperCase() + t.tag.slice(1)}**${t.text ? ` ${t.text}` : ''}`);
+  }
   for (const t of [...tagsNamed(tags, 'default'), ...tagsNamed(tags, 'defaultValue')]) {
     parts.push(`**Default** ${code(t.text)}`);
   }
+  const examples = tagsNamed(tags, 'example');
+  if (examples.length > 0) {
+    parts.push(`**${examples.length > 1 ? 'Examples' : 'Example'}** ${examples.map((t) => inlineExample(t.text)).join(' ')}`);
+  }
+  for (const t of tagsNamed(tags, 'see')) parts.push(`**See** ${t.text}`);
   return cell(resolveText(ctx, parts.join('\n\n')));
 }
 
@@ -219,10 +281,10 @@ function typeParameterTable(ctx: Context, params: ApiTypeParameter[], level: num
     if (p.default) name += ` = ${p.default}`;
     const cols = [code(name)];
     if (withDescription) cols.push(cell(resolveText(ctx, p.description)));
-    return `| ${cols.join(' | ')} |`;
+    return cols;
   });
-  const header = withDescription ? '| Type Parameter | Description |\n| ------ | ------ |' : '| Type Parameter |\n| ------ |';
-  return [heading(level, 'Type Parameters'), [header, ...rows].join('\n')];
+  const header = withDescription ? ['Type Parameter', 'Description'] : ['Type Parameter'];
+  return [heading(level, 'Type Parameters'), table(header, rows)];
 }
 
 function signatureBlocks(ctx: Context, sig: ApiSignature, level: number): string[] {
@@ -230,22 +292,23 @@ function signatureBlocks(ctx: Context, sig: ApiSignature, level: number): string
   out.push(...docBlocks(ctx, sig.summary, sig.tags, level));
   out.push(...typeParameterTable(ctx, sig.typeParameters, level));
   if (sig.parameters.length > 0) {
-    const withDescription = sig.parameters.some((p) => p.description);
-    const header = withDescription ? '| Parameter | Type | Description |\n| ------ | ------ | ------ |' : '| Parameter | Type |\n| ------ | ------ |';
+    // A default value is written in the description column, so it needs the column too.
+    const withDescription = sig.parameters.some((p) => p.description || p.defaultValue !== null);
+    const header = withDescription ? ['Parameter', 'Type', 'Description'] : ['Parameter', 'Type'];
     const rows = sig.parameters.map((p) => {
       const name = `${p.rest ? '...' : ''}${p.name}${p.optional && !p.rest ? '?' : ''}`;
-      const cols = [code(name), code(p.type)];
+      const cols = [code(name), typeCode(ctx, p.type)];
       if (withDescription) {
         let description = resolveText(ctx, p.description);
         if (p.defaultValue !== null) description += `${description ? ' ' : ''}**Default** ${code(p.defaultValue)}`;
         cols.push(cell(description));
       }
-      return `| ${cols.join(' | ')} |`;
+      return cols;
     });
-    out.push(heading(level, 'Parameters'), [header, ...rows].join('\n'));
+    out.push(heading(level, 'Parameters'), table(header, rows));
   }
   if (sig.returns) {
-    out.push(heading(level, 'Returns'), code(sig.returns.type));
+    out.push(heading(level, 'Returns'), typeCode(ctx, sig.returns.type));
     if (sig.returns.description) out.push(resolveText(ctx, sig.returns.description));
   }
   return out;
@@ -270,17 +333,23 @@ function memberBlocks(ctx: Context, members: ApiMember[], level: number): string
     if (group.kind === 'property' || group.kind === 'enum-member' || group.kind === 'index-signature') {
       const isEnum = group.kind === 'enum-member';
       const header = isEnum
-        ? '| Member | Value | Description | Defined in |\n| ------ | ------ | ------ | ------ |'
-        : `| ${group.kind === 'index-signature' ? 'Index' : 'Property'} | Type | Description | Defined in |\n| ------ | ------ | ------ | ------ |`;
+        ? ['Member', 'Value', 'Description', 'Defined in']
+        : [group.kind === 'index-signature' ? 'Index' : 'Property', 'Type', 'Description', 'Defined in'];
       const rows = list.map((m) => {
-        const flags = [m.static ? 'static' : '', m.readonly && !isEnum ? 'readonly' : '', m.protected ? 'protected' : '']
+        const flags = [
+          m.static ? 'static' : '',
+          m.abstract ? 'abstract' : '',
+          m.readonly && !isEnum ? 'readonly' : '',
+          m.protected ? 'protected' : '',
+        ]
           .filter(Boolean)
           .join(' ');
         const name = `<a id="${anchor(m.name)}"></a> ${code(`${m.name}${m.optional ? '?' : ''}`)}${flags ? ` (${flags})` : ''}`;
         const source = m.source.url ? `[${m.source.file}:${m.source.line}](${m.source.url})` : `${m.source.file}:${m.source.line}`;
-        return `| ${name} | ${m.type === null ? '' : code(m.type)} | ${cellDescription(ctx, m.summary, m.tags)} | ${source} |`;
+        const type = m.type === null ? '' : isEnum ? code(m.type) : typeCode(ctx, m.type);
+        return [name, type, cellDescription(ctx, m.summary, m.tags), source];
       });
-      out.push([header, ...rows].join('\n'));
+      out.push(table(header, rows));
       continue;
     }
 
@@ -307,7 +376,7 @@ function symbolBody(ctx: Context, level: number): string[] {
   if (s.referenceOf !== null) {
     const link = s.links.find((l) => l.target === s.referenceOf);
     const target = link
-      ? `[${escapeMarkdown(s.referenceOf)}](${linkPath(ctx, link.name, link.kind, link.kindDir, null)})`
+      ? `[${escapeMarkdown(s.referenceOf)}](${linkPath(ctx, { ...link, member: null })})`
       : code(s.referenceOf);
     out.push(`Renames and re-exports ${target}`);
     out.push(...docBlocks(ctx, s.summary, s.tags, level));
@@ -319,8 +388,12 @@ function symbolBody(ctx: Context, level: number): string[] {
     out.push(definedIn(s.source));
     out.push(...docBlocks(ctx, s.summary, s.tags, level));
   }
-  if (s.extends.length > 0) out.push(heading(level, 'Extends'), s.extends.map((t) => `- ${code(t)}`).join('\n'));
-  if (s.implements.length > 0) out.push(heading(level, 'Implements'), s.implements.map((t) => `- ${code(t)}`).join('\n'));
+  if (s.extends.length > 0) {
+    out.push(heading(level, 'Extends'), s.extends.map((t) => `- ${typeCode(ctx, t)}`).join('\n'));
+  }
+  if (s.implements.length > 0) {
+    out.push(heading(level, 'Implements'), s.implements.map((t) => `- ${typeCode(ctx, t)}`).join('\n'));
+  }
   if (s.kind !== 'function') out.push(...typeParameterTable(ctx, s.typeParameters, level));
   if (s.kind === 'function') {
     s.signatures.forEach((sig, i) => {
@@ -343,21 +416,8 @@ function symbolTitle(s: ApiSymbol, withTypeParameters: boolean): string {
   return escapeMarkdown(`${s.name}${call}${params}`);
 }
 
-function ownFileKinds(options: ApiMarkdownOptions): Set<ApiSymbolKind> {
-  const kinds = options.ownFileKinds ?? [];
-  for (const kind of kinds) {
-    if (!KIND_GROUPS.some((g) => g.kind === kind)) {
-      throw new Error(
-        `Unknown symbol kind "${String(kind)}" in ownFileKinds (expected: ${KIND_GROUPS.map((g) => g.kind).join(', ')})`
-      );
-    }
-  }
-  return new Set(kinds);
-}
-
 function makeContext(symbol: ApiSymbol, options: ApiMarkdownOptions, onOwnPage: boolean): Context {
   return {
-    ownFileKinds: ownFileKinds(options),
     categoryOrder: options.categoryOrder ?? [],
     indexFile: options.indexFile ?? 'README.md',
     onOwnPage,
@@ -378,7 +438,7 @@ function orderCategories(categories: string[], order: string[]): string[] {
 /**
  * Render the index page of an API: symbols grouped by kind (and by `@category`).
  *
- * Symbols of `ownFileKinds` are listed as links to `<kindDir>/<name>.md`;
+ * Symbols with a page (the datasource's `pages`) are listed as links to it;
  * the others are written in full. Records keep the order of the datasource.
  *
  * @param records - Records of a `typescript` datasource
@@ -388,7 +448,6 @@ function orderCategories(categories: string[], order: string[]): string[] {
 export function renderApiIndex(records: QueryResult, options: ApiMarkdownOptions = {}): string {
   const symbols = records.map(toSymbol);
   const level = options.headingLevel ?? 2;
-  const ownFile = ownFileKinds(options);
   const out: string[] = [];
 
   for (const group of KIND_GROUPS) {
@@ -405,11 +464,11 @@ export function renderApiIndex(records: QueryResult, options: ApiMarkdownOptions
       const symbolLevel = category === null ? level + 1 : level + 2;
       if (category !== null) out.push(heading(level + 1, escapeMarkdown(category)));
       const list = category === null ? inGroup : inGroup.filter((s) => (s.category ?? DEFAULT_CATEGORY) === category);
-      if (ownFile.has(group.kind)) {
-        out.push(list.map((s) => `- [${escapeMarkdown(s.name)}](${s.kindDir}/${s.name}.md)`).join('\n'));
-        continue;
+      const withPage = list.filter((s) => s.page !== null);
+      if (withPage.length > 0) {
+        out.push(withPage.map((s) => `- [${escapeMarkdown(s.name)}](${s.page})`).join('\n'));
       }
-      list.forEach((s, i) => {
+      list.filter((s) => s.page === null).forEach((s, i) => {
         if (i > 0) out.push('***');
         const ctx = makeContext(s, options, false);
         out.push(heading(symbolLevel, symbolTitle(s, false)), ...symbolBody(ctx, symbolLevel + 1));
@@ -420,16 +479,17 @@ export function renderApiIndex(records: QueryResult, options: ApiMarkdownOptions
 }
 
 /**
- * Render the page of one symbol (for `<kindDir>/<name>.md`).
+ * Render the page of one symbol (its `page`, `<kindDir>/<name>.md`).
  *
  * @param record - One record of a `typescript` datasource
- * @param options - Rendering options; `ownFileKinds` and `indexFile` decide the links to other symbols
+ * @param options - Rendering options; `indexFile` is used for links to symbols written on the index
  * @returns Markdown
  */
 export function renderApiPage(record: Record<string, unknown>, options: ApiMarkdownOptions = {}): string {
   const symbol = toSymbol(record);
   const ctx = makeContext(symbol, options, true);
   const breadcrumb = `[API](../${ctx.indexFile}) / ${escapeMarkdown(symbol.name)}`;
-  const title = heading(1, `${symbol.kindLabel}: ${symbolTitle(symbol, true)}`);
+  const kind = symbol.abstract ? `Abstract ${symbol.kindLabel}` : symbol.kindLabel;
+  const title = heading(1, `${kind}: ${symbolTitle(symbol, true)}`);
   return [breadcrumb, title, ...symbolBody(ctx, 2)].join('\n\n') + '\n';
 }

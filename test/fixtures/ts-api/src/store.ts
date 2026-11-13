@@ -12,6 +12,14 @@ export interface StoreOptions {
   limit?: number;
   /** @internal */
   secret?: string;
+  /**
+   * Write mode.
+   * @example
+   * ```ts
+   * new Store({ name: 'a', mode: 'safe' });
+   * ```
+   */
+  mode?: 'fast' | 'safe';
 }
 
 /**
