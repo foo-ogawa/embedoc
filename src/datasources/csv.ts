@@ -5,6 +5,7 @@
 import { readFile } from 'node:fs/promises';
 import { parse } from 'csv-parse/sync';
 import type { Datasource, DatasourceConfig, QueryResult } from '../types/index.js';
+import { filterRows } from './filter.js';
 
 export class CsvDatasource implements Datasource {
   readonly type = 'csv';
@@ -38,19 +39,7 @@ export class CsvDatasource implements Datasource {
   }
 
   async query(sql: string, params: unknown[] = []): Promise<QueryResult> {
-    // CSV does not support SQL queries (simple filtering only)
-    // Simple implementation that parses WHERE clause
-    const data = await this.loadData();
-
-    // Only supports simple WHERE column = value
-    const whereMatch = sql.match(/WHERE\s+(\w+)\s*=\s*\?/i);
-    if (whereMatch && params.length > 0) {
-      const column = whereMatch[1];
-      const value = params[0];
-      return data.filter((row) => String(row[column ?? '']) === String(value));
-    }
-
-    return data;
+    return filterRows(await this.loadData(), sql, params);
   }
 
   async getAll(): Promise<QueryResult> {
