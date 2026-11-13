@@ -12,6 +12,7 @@ import yaml from 'js-yaml';
 import pc from 'picocolors';
 import chokidar from 'chokidar';
 import { tsImport } from 'tsx/esm/api';
+import { register as registerTsxCommonJs } from 'tsx/cjs/api';
 import { createProgram, type CommandHandlers } from './generated/program.js';
 import type { EmbedocConfig, EmbedDefinition, CustomDatasourceDefinition, InlineFormatParser } from './types/index.js';
 import { initializeDatasources, closeDatasources } from './datasources/index.js';
@@ -64,6 +65,24 @@ function resolveRenderersDir(config: EmbedocConfig): string {
   return '.embedoc/renderers';
 }
 
+let tsxCommonJsRegistered = false;
+
+/**
+ * Import a TypeScript module from the user's project.
+ *
+ * tsx compiles a `.ts` file in a project without `"type": "module"` as
+ * CommonJS. On Node.js before 20.11, tsImport hands such a file to Node's
+ * CommonJS loader, which compiles it only when tsx's CommonJS hook is
+ * registered process-wide, so the hook is registered before the first import.
+ */
+async function importTypeScript(filePath: string): Promise<unknown> {
+  if (!tsxCommonJsRegistered) {
+    registerTsxCommonJs();
+    tsxCommonJsRegistered = true;
+  }
+  return tsImport(filePath, import.meta.url);
+}
+
 /**
  * Load renderers (supports both TypeScript and JavaScript)
  */
@@ -75,7 +94,7 @@ async function loadRenderers(
 
   try {
     if (await fileExists(tsIndexPath)) {
-      const module = await tsImport(tsIndexPath, import.meta.url) as { 
+      const module = await importTypeScript(tsIndexPath) as { 
         embeds?: Record<string, EmbedDefinition>;
         default?: { embeds?: Record<string, EmbedDefinition> };
       };
@@ -127,7 +146,7 @@ async function loadCustomDatasources(
     } | undefined;
 
     if (await fileExists(tsIndexPath)) {
-      module = await tsImport(tsIndexPath, import.meta.url) as typeof module;
+      module = await importTypeScript(tsIndexPath) as typeof module;
     } else if (await fileExists(jsIndexPath)) {
       const moduleUrl = pathToFileURL(jsIndexPath).href;
       module = (await import(moduleUrl)) as typeof module;

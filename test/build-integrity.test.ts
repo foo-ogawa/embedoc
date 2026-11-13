@@ -1,7 +1,7 @@
 /**
  * A build changes nothing outside the markers (#43), markers or
- * renderers it cannot honour fail the build (#44), and renderers can
- * import embedoc in CommonJS and ES module projects.
+ * renderers it cannot honour fail the build (#44), and renderers load in
+ * CommonJS and ES module projects.
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
@@ -133,7 +133,7 @@ describe('markers and renderers the build cannot honour fail it (#44)', () => {
   }, 60_000);
 });
 
-describe('renderers import embedoc in CommonJS and ES module projects', () => {
+describe('renderers in CommonJS and ES module projects', () => {
   const renderers =
     "import { defineEmbed } from 'embedoc';\n" +
     "export const embeds = { hello: defineEmbed({ async render() { return { content: 'hello' }; } }) };\n";
@@ -154,4 +154,23 @@ describe('renderers import embedoc in CommonJS and ES module projects', () => {
       expect(await readFile(join(dir, 'doc.md'), 'utf-8')).toBe('<!--@embedoc:hello-->\nhello\n<!--@embedoc:end-->\n');
     }, 60_000);
   }
+
+  // Node.js loads this TypeScript through its own CommonJS loader. `enum` is
+  // outside what Node.js strips natively, so only tsx's process-wide CommonJS
+  // hook compiles it: the hook that also loads a CommonJS project's renderers
+  // on Node.js before 20.11.
+  it('a CommonJS project renderer can require TypeScript through Node.js', async () => {
+    await project(
+      "import { createRequire } from 'node:module';\n" +
+        'const load = createRequire(__filename);\n' +
+        "export const embeds = { hello: { async render() { return { content: load('./greeting.ts').greeting }; } } };\n",
+      doc
+    );
+    await writeFile(join(dir, '.embedoc', 'renderers', 'greeting.ts'), "enum Greeting { Hello = 'hello' }\nexport const greeting = Greeting.Hello;\n");
+    await writeFile(join(dir, 'package.json'), JSON.stringify({ name: 'consumer', private: true }));
+    const { code, output } = await cli(['build'], dir);
+    expect(output).not.toContain('Error in');
+    expect(code).toBe(0);
+    expect(await readFile(join(dir, 'doc.md'), 'utf-8')).toBe('<!--@embedoc:hello-->\nhello\n<!--@embedoc:end-->\n');
+  }, 60_000);
 });
