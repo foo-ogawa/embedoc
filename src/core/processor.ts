@@ -160,18 +160,23 @@ export async function processFile(
     // Create helpers
     const markdownHelper = createMarkdownHelper();
 
+    // A marker without a renderer fails the file: skipping it would keep its
+    // old content and still report success.
+    const unknown = markers.filter((m) => !embeds[m.templateName]);
+    if (unknown.length > 0) {
+      const where = unknown.map((m) => {
+        const line = frontmatterLineOffset + bodyContent.slice(0, m.startIndex).split('\n').length;
+        return `"${m.templateName}" at ${filePath}:${line}`;
+      });
+      throw new Error(`Unknown embed ${where.join(', ')} (no renderer has this name)`);
+    }
+
     // Replace from end to start (to preserve indices)
     let processedContent = bodyContent;
     const sortedMarkers = [...markers].sort((a, b) => b.startIndex - a.startIndex);
 
     for (const marker of sortedMarkers) {
-      // Get embed
-      const embed = embeds[marker.templateName];
-
-      if (!embed) {
-        console.warn(`Warning: Unknown embed "${marker.templateName}" in ${filePath}`);
-        continue;
-      }
+      const embed = embeds[marker.templateName]!;
 
       // Resolve parameter variables (including inline datasources)
       const resolvedParams = resolveVariablesWithInline(
@@ -230,7 +235,7 @@ export async function processFile(
         const lineEnding = config.output?.line_ending ?? 'lf';
         const outputContent =
           lineEnding === 'crlf'
-            ? finalContent.replace(/\n/g, '\r\n')
+            ? finalContent.replace(/\r?\n/g, '\r\n')
             : finalContent;
 
         await writeFile(filePath, outputContent, {

@@ -90,11 +90,10 @@ async function loadRenderers(
 
     return {};
   } catch (error) {
+    // A renderer that cannot be loaded fails the command: building without it
+    // would leave its markers with stale content and still exit 0.
     const message = error instanceof Error ? error.message : String(error);
-    console.warn(
-      pc.yellow(`Warning: Could not load renderers from ${renderersDir}: ${message}`)
-    );
-    return {};
+    throw new Error(`Could not load renderers from ${renderersDir}: ${message}`, { cause: error });
   }
 }
 
@@ -143,11 +142,11 @@ async function loadCustomDatasources(
       inlineFormats: module.inlineFormats ?? module.default?.inlineFormats ?? {},
     };
   } catch (error) {
+    // Like renderers, custom datasources that cannot be loaded fail the command.
     const message = error instanceof Error ? error.message : String(error);
-    console.warn(
-      pc.yellow(`Warning: Could not load custom datasources from ${datasourcesDir}: ${message}`)
-    );
-    return empty;
+    throw new Error(`Could not load custom datasources from ${datasourcesDir}: ${message}`, {
+      cause: error,
+    });
   }
 }
 

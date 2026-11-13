@@ -194,6 +194,11 @@ embedoc build --verbose
 
 All commands can be run directly with `npx embedoc <command>` or via package.json scripts after `embedoc init`.
 
+`build` exits with 1 when any file fails. A file fails if it has a marker whose embed no renderer
+provides (the message gives the file and line), and nothing is written to it. The command fails if
+the renderers or custom datasources cannot be loaded. So `embedoc build && git diff --exit-code`
+does not pass on stale content.
+
 ---
 
 ## Configuration File
@@ -1091,6 +1096,9 @@ embeds:
 ```
 
 Frontmatter values can be referenced in marker attributes using `${...}` syntax.
+
+A build rewrites only the content between markers. Everything else stays byte for byte as it was,
+including the front matter, the blank lines after it, and CRLF line endings.
 
 ---
 

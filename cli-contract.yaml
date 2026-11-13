@@ -3,7 +3,7 @@ cli_contracts: 0.1.0
 
 info:
   title: embedoc CLI
-  version: 0.14.11
+  version: 0.14.12
   description: >-
     In-place document generator that auto-updates marker blocks in documents
     and source code while preserving manually edited sections. Supports
@@ -172,7 +172,10 @@ command_sets:
               format: text
 
           '1':
-            description: Build failed (config not found, datasource error, or marker processing error).
+            description: >-
+              Build failed (config not found, renderers or custom datasources that
+              cannot be loaded, datasource error, a marker whose embed no renderer
+              provides, or another marker processing error).
             stderr:
               format: text
 

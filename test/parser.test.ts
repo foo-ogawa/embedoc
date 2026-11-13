@@ -416,3 +416,19 @@ describe('markers inside Markdown code fences', () => {
     expect(result.markersUpdated).toBe(1);
   });
 });
+
+describe('marker blocks do not nest', () => {
+  const html = DEFAULT_COMMENT_STYLES['html']!;
+
+  it('treats a start marker inside a block as content of that block', () => {
+    const content = [
+      '<!--@embedoc:outer-->',
+      'Usage: `<!--@embedoc:inner id="1"-->` quoted in generated text',
+      '<!--@embedoc:end-->',
+      '<!--@embedoc:after-->x<!--@embedoc:end-->',
+    ].join('\n');
+    const markers = parseMarkers(content, html);
+    expect(markers.map((m) => m.templateName)).toEqual(['outer', 'after']);
+    expect(markers[0]!.existingContent).toBe('\nUsage: `<!--@embedoc:inner id="1"-->` quoted in generated text\n');
+  });
+});

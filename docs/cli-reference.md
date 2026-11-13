@@ -2,7 +2,7 @@
 
 In-place document generator that auto-updates marker blocks in documents and source code while preserving manually edited sections. Supports multiple datasources (SQLite, CSV, JSON, YAML, glob, TypeScript API), programmable TypeScript renderers, Handlebars file generation, and incremental builds with dependency tracking.
 
-**Version:** 0.14.11
+**Version:** 0.14.12
 
 ## Table of Contents
 
@@ -117,7 +117,7 @@ embedoc build --dry-run --verbose
 
 - **stdout:** format=`text`
 
-**Exit 1:** Build failed (config not found, datasource error, or marker processing error).
+**Exit 1:** Build failed (config not found, renderers or custom datasources that cannot be loaded, datasource error, a marker whose embed no renderer provides, or another marker processing error).
 
 - **stderr:** format=`text`
 

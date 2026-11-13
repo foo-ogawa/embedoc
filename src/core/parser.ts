@@ -73,7 +73,12 @@ export function resolveVariables(
 }
 
 /**
- * Parse frontmatter from content
+ * Parse frontmatter from content.
+ *
+ * `raw + content` is always the input, byte for byte: `raw` is the front matter
+ * exactly as written (delimiters and line endings included) and `content` is
+ * everything after it, blank lines included. Writing a file back as
+ * `raw + content` therefore changes nothing outside the markers.
  */
 export function parseFrontmatter(content: string): ParsedFrontmatter {
   const match = content.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?/);
@@ -91,13 +96,10 @@ export function parseFrontmatter(content: string): ParsedFrontmatter {
     ? parsed as Record<string, unknown>
     : {};
 
-  const cleanContent = content.slice(match[0].length).replace(/^\n+/, '');
-  const raw = `---\n${matterBody.trim()}\n---\n`;
-
   return {
     data,
-    content: cleanContent,
-    raw,
+    content: content.slice(match[0].length),
+    raw: match[0],
   };
 }
 
@@ -265,6 +267,9 @@ export function parseMarkers(
           endMarkerLine,
         });
       }
+      // Blocks do not nest: what is between a block's markers is its content
+      // (generated text may quote marker syntax), so scanning resumes after it.
+      startPattern.lastIndex = endIndex;
     }
   }
 
