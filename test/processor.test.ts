@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { processFile } from '../src/core/processor.js';
+import { processFile, build } from '../src/core/processor.js';
 import { writeFile, readFile, mkdir, rm } from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
@@ -264,5 +264,57 @@ describe('processFile', () => {
         `<!--@embedoc:embed_a id="1"-->\ncontent A\n<!--@embedoc:end-->\n\n<!--@embedoc:embed_b id="2"-->\nupdated B\n<!--@embedoc:end-->`
       );
     });
+  });
+});
+
+describe('build with specific files', () => {
+  let tempDir: string;
+  const embeds: Record<string, EmbedDefinition> = {
+    hello: { async render() { return { content: 'hello' }; } },
+  };
+  const marker = '<!--@embedoc:hello-->\n<!--@embedoc:end-->\n';
+
+  beforeEach(async () => {
+    tempDir = path.join(os.tmpdir(), `embedoc-build-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+    await mkdir(path.join(tempDir, 'docs', 'skip'), { recursive: true });
+    await writeFile(path.join(tempDir, 'README.md'), marker);
+    await writeFile(path.join(tempDir, 'docs', 'a.md'), marker);
+    await writeFile(path.join(tempDir, 'docs', 'skip', 'b.md'), marker);
+  });
+
+  afterEach(async () => {
+    await rm(tempDir, { recursive: true });
+  });
+
+  function config(): EmbedocConfig {
+    return {
+      version: '1.0',
+      targets: [
+        { pattern: path.join(tempDir, 'README.md'), comment_style: 'html' },
+        { pattern: path.join(tempDir, 'docs', '**', '*.md'), comment_style: 'html', exclude: ['**/skip/**'] },
+      ],
+    };
+  }
+
+  it('processes a named file once, by the target that covers it', async () => {
+    const result = await build(config(), embeds, {}, { specificFiles: [path.join(tempDir, 'README.md')] });
+    expect(result.results.map((r) => r.filePath)).toEqual([path.join(tempDir, 'README.md')]);
+  });
+
+  it('does not process a named file that its target excludes', async () => {
+    const skipped = path.join(tempDir, 'docs', 'skip', 'b.md');
+    const result = await build(config(), embeds, {}, { specificFiles: [skipped] });
+    expect(result.totalFiles).toBe(0);
+    expect(await readFile(skipped, 'utf-8')).toBe(marker);
+  });
+
+  it('builds the same files as a full build when every file is named', async () => {
+    const all = await build(config(), embeds, {}, { dryRun: true });
+    const named = await build(config(), embeds, {}, {
+      dryRun: true,
+      specificFiles: all.results.map((r) => r.filePath),
+    });
+    expect(named.results.map((r) => r.filePath)).toEqual(all.results.map((r) => r.filePath));
+    expect(all.results.map((r) => path.relative(tempDir, r.filePath)).sort()).toEqual(['README.md', path.join('docs', 'a.md')]);
   });
 });

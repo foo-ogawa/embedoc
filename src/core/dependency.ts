@@ -5,7 +5,7 @@
 
 import { readFile } from 'node:fs/promises';
 import { resolve, relative } from 'node:path';
-import { glob } from 'glob';
+import { getTargetFiles } from './processor.js';
 import type {
   EmbedocConfig,
   EmbedDefinition,
@@ -146,10 +146,7 @@ export class DependencyGraph {
     this.nodes.clear();
 
     for (const targetConfig of this.config.targets) {
-      const files = await glob(targetConfig.pattern, {
-        ignore: targetConfig.exclude ?? [],
-        nodir: true,
-      });
+      const files = await getTargetFiles(targetConfig);
 
       for (const filePath of files) {
         await this.analyzeDocument(filePath, targetConfig);

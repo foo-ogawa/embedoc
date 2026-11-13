@@ -4,6 +4,7 @@
  */
 
 import { readFile, writeFile } from 'node:fs/promises';
+import { resolve } from 'node:path';
 import { glob } from 'glob';
 import type {
   EmbedocConfig,
@@ -247,9 +248,10 @@ export async function processFile(
 }
 
 /**
- * Get target files
+ * Files of a target: its pattern, minus its exclude patterns.
+ * The one place that decides which files a target covers.
  */
-async function getTargetFiles(
+export async function getTargetFiles(
   targetConfig: TargetConfig
 ): Promise<string[]> {
   const files = await glob(targetConfig.pattern, {
@@ -277,17 +279,16 @@ export async function build(
   const startTime = Date.now();
   const results: ProcessResult[] = [];
 
-  for (const targetConfig of config.targets) {
-    // Get target files
-    let files: string[];
+  // Specific files narrow the build to those of the target files that were named.
+  const specific =
+    options.specificFiles && options.specificFiles.length > 0
+      ? new Set(options.specificFiles.map((f) => resolve(f)))
+      : null;
 
-    if (options.specificFiles && options.specificFiles.length > 0) {
-      // When specific files are provided
-      files = options.specificFiles.filter((f) =>
-        f.endsWith(targetConfig.pattern.split('*').pop() ?? '')
-      );
-    } else {
-      files = await getTargetFiles(targetConfig);
+  for (const targetConfig of config.targets) {
+    let files = await getTargetFiles(targetConfig);
+    if (specific) {
+      files = files.filter((f) => specific.has(resolve(f)));
     }
 
     // Process each file
