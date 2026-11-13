@@ -340,6 +340,8 @@ github:
 {comment_start}@embedoc:end{comment_end}
 ```
 
+In Markdown files (`.md`, `.markdown`, `.mdx`), markers inside fenced code blocks (```` ``` ```` or `~~~`) are example code, not markers: they are left as they are. This applies to `@embedoc-data` markers too.
+
 ### Supported Comment Formats
 
 | Format | Start Marker | End Marker | Target Files |

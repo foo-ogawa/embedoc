@@ -11,7 +11,7 @@ import type {
   EmbedDefinition,
   TargetConfig,
 } from '../types/index.js';
-import { parseFrontmatter, parseMarkers, getCommentStyle } from './parser.js';
+import { parseFrontmatter, parseMarkers, getCommentStyle, isMarkdownFile } from './parser.js';
 
 /**
  * Dependency type
@@ -104,7 +104,7 @@ export class DependencyGraph {
       const { content: bodyContent } = parseFrontmatter(content);
 
       // Parse markers to extract embed names
-      const markers = parseMarkers(bodyContent, commentStyle);
+      const markers = parseMarkers(bodyContent, commentStyle, { markdown: isMarkdownFile(filePath) });
       const embedNames = new Set(markers.map((m) => m.templateName));
 
       // Add dependency for each embed

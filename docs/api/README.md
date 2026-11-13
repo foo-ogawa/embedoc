@@ -1276,7 +1276,7 @@ e.g. `./docs/api/{kindDir}/{name}.md`.
 const defineEmbed: DefineEmbedFn;
 ```
 
-Defined in: [index.ts:185](https://github.com/foo-ogawa/embedoc/blob/main/src/index.ts#L185)
+Defined in: [index.ts:188](https://github.com/foo-ogawa/embedoc/blob/main/src/index.ts#L188)
 
 Define a custom embed for generating content in documents.
 
@@ -1411,7 +1411,7 @@ Markdown
 function defineDatasource(definition: CustomDatasourceDefinition): CustomDatasourceDefinition;
 ```
 
-Defined in: [index.ts:223](https://github.com/foo-ogawa/embedoc/blob/main/src/index.ts#L223)
+Defined in: [index.ts:226](https://github.com/foo-ogawa/embedoc/blob/main/src/index.ts#L226)
 
 Define a custom datasource type for use in `embedoc.config.yaml`.
 
