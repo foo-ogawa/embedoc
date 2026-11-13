@@ -37,6 +37,18 @@ export type {
   BuiltinDatasourceType,
   CustomDatasourceDefinition,
   InlineFormatParser,
+  // TypeScript API datasource
+  TypeScriptDatasourceConfig,
+  ApiSymbolKind,
+  ApiMemberKind,
+  ApiSource,
+  ApiTag,
+  ApiTypeParameter,
+  ApiParameter,
+  ApiSignature,
+  ApiMember,
+  ApiLinkTarget,
+  ApiSymbol,
   // Embeds
   MarkdownHelper,
   EmbedContext,
@@ -90,10 +102,13 @@ export {
   JsonDatasource,
   YamlDatasource,
   GlobDatasource,
+  TypeScriptDatasource,
 } from './datasources/index.js';
 
 // Helpers
 export { createMarkdownHelper } from './helpers/markdown.js';
+export { renderApiIndex, renderApiPage } from './helpers/api-markdown.js';
+export type { ApiMarkdownOptions } from './helpers/api-markdown.js';
 
 // Embed definition helper function
 import type { EmbedDefinition, DefineEmbedFn } from './types/index.js';

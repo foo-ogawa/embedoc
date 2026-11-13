@@ -12,7 +12,9 @@ import type {
   GeneratorConfig,
   GenerateResult,
   Datasource,
+  ApiSymbolKind,
 } from '../types/index.js';
+import { renderApiPage } from '../helpers/api-markdown.js';
 
 /**
  * Register built-in Handlebars helpers
@@ -77,6 +79,23 @@ function registerHelpers(): void {
   // replace: String replacement
   Handlebars.registerHelper('replace', (str, search, replacement) => {
     return String(str ?? '').replace(new RegExp(search, 'g'), replacement);
+  });
+
+  // api_page: Page of one record of a `typescript` datasource
+  // {{api_page this own_file_kinds="class,interface,function" index_file="README.md"}}
+  Handlebars.registerHelper('api_page', (record: Record<string, unknown>, options: Handlebars.HelperOptions) => {
+    const hash = options.hash as Record<string, unknown>;
+    const kinds = hash['own_file_kinds'];
+    const indexFile = hash['index_file'];
+    return new Handlebars.SafeString(
+      renderApiPage(record, {
+        ownFileKinds:
+          typeof kinds === 'string'
+            ? (kinds.split(',').map((k) => k.trim()).filter(Boolean) as ApiSymbolKind[])
+            : undefined,
+        indexFile: typeof indexFile === 'string' ? indexFile : undefined,
+      })
+    );
   });
 }
 
@@ -178,6 +197,28 @@ async function generateFile(
 }
 
 /**
+ * Records selected by a generator's `where`
+ */
+function selectRecords(
+  records: Record<string, unknown>[],
+  where: GeneratorConfig['where']
+): Record<string, unknown>[] {
+  if (where === undefined) {
+    return records;
+  }
+  const conditions = Object.entries(where).map(([field, value]) => {
+    const values = Array.isArray(value) ? value : [value];
+    if (!values.every((v) => typeof v === 'string')) {
+      throw new Error(`Generator "where.${field}" must be a string or a list of strings`);
+    }
+    return { field, values: new Set(values) };
+  });
+  return records.filter((record) =>
+    conditions.every(({ field, values }) => values.has(String(record[field])))
+  );
+}
+
+/**
  * Generate files from datasource
  */
 export async function generateFromDatasource(
@@ -221,8 +262,8 @@ export async function generateFromDatasource(
       console.log(`  Generator: ${generatorConfig.template}`);
     }
 
-    // Generate file for each record
-    for (const record of records) {
+    // Generate file for each selected record
+    for (const record of selectRecords(records, generatorConfig.where)) {
       const result = await generateFile(
         record,
         generatorConfig,

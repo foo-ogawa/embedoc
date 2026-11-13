@@ -67,7 +67,34 @@ export type {
    * Parser function for custom inline datasource formats.
    */
   InlineFormatParser,
+
+  /**
+   * Configuration of the built-in `typescript` datasource.
+   */
+  TypeScriptDatasourceConfig,
+
+  /**
+   * A record of the `typescript` datasource and its parts.
+   */
+  ApiSymbol,
+  ApiSymbolKind,
+  ApiMember,
+  ApiMemberKind,
+  ApiSignature,
+  ApiParameter,
+  ApiTypeParameter,
+  ApiTag,
+  ApiSource,
+  ApiLinkTarget,
 } from './types/index.js';
+
+// Inline datasources (`@embedoc-data` markers) as seen by embeds
+export { InlineDatasource } from './core/inline-datasource.js';
+export type { InlineDefinitionLocation } from './core/inline-datasource.js';
+
+// Rendering of `typescript` datasource records
+export { renderApiIndex, renderApiPage } from './helpers/api-markdown.js';
+export type { ApiMarkdownOptions } from './helpers/api-markdown.js';
 
 // Re-export helper functions
 export { defineEmbed, defineDatasource } from './index.js';

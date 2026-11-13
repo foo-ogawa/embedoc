@@ -7,6 +7,7 @@ import { stat } from 'node:fs/promises';
 import { basename, dirname, extname } from 'node:path';
 import { glob as globFn } from 'glob';
 import type { Datasource, DatasourceConfig, QueryResult } from '../types/index.js';
+import { filterRows } from './filter.js';
 
 interface FileInfo {
   path: string;
@@ -64,22 +65,7 @@ export class GlobDatasource implements Datasource {
   }
 
   async query(sql: string, params: unknown[] = []): Promise<QueryResult> {
-    // Glob does not support SQL queries
-    // Simple filtering only
-    const data = await this.loadData();
-
-    // Only supports simple WHERE column = value
-    const whereMatch = sql.match(/WHERE\s+(\w+)\s*=\s*\?/i);
-    if (whereMatch && params.length > 0) {
-      const column = whereMatch[1];
-      const value = params[0];
-      return data.filter((row) => {
-        const rowValue = row[column ?? ''];
-        return rowValue === value || String(rowValue) === String(value);
-      });
-    }
-
-    return data;
+    return filterRows(await this.loadData(), sql, params);
   }
 
   async getAll(): Promise<QueryResult> {

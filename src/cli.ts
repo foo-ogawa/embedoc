@@ -15,7 +15,7 @@ import { tsImport } from 'tsx/esm/api';
 import { createProgram, type CommandHandlers } from './generated/program.js';
 import type { EmbedocConfig, EmbedDefinition, CustomDatasourceDefinition, InlineFormatParser } from './types/index.js';
 import { initializeDatasources, closeDatasources } from './datasources/index.js';
-import { build } from './core/processor.js';
+import { build, getTargetFiles } from './core/processor.js';
 import { generateAll } from './core/generator.js';
 import { DependencyGraph } from './core/dependency.js';
 
@@ -510,11 +510,10 @@ export const inlineFormats = {
           // Changed file might be a document itself
           for (const [filePath] of changes) {
             const absolutePath = resolve(filePath);
-            // Check if matches target patterns
+            // Check if it is a file of a target
             for (const target of config.targets) {
-              const { glob } = await import('glob');
-              const matches = await glob(target.pattern, { absolute: true });
-              if (matches.includes(absolutePath)) {
+              const files = await getTargetFiles(target);
+              if (files.some((f) => resolve(f) === absolutePath)) {
                 affectedDocs.add(absolutePath);
                 break;
               }

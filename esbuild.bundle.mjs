@@ -8,9 +8,12 @@ const minify = process.argv.includes("--minify");
 // Native modules and runtime-needed packages must stay external.
 // tsx resolves loader paths via import.meta.url relative to its package
 // directory and cannot be inlined into a single-file bundle.
+// typescript is an optional peer dependency, loaded from the user's project
+// only when a `typescript` datasource is used.
 const externalPackages = [
   "better-sqlite3",
   "tsx",
+  "typescript",
 ];
 
 const inlineBuildTimeConstants = {

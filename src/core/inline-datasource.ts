@@ -325,7 +325,10 @@ interface InternalLocation {
 }
 
 /**
- * Inline Datasource class
+ * Datasource for document-local data defined with `@embedoc-data` markers.
+ *
+ * Embeds receive it in `ctx.datasources` like any other {@link Datasource},
+ * and can read where each property was defined with {@link InlineDatasource.getMeta}.
  */
 export class InlineDatasource implements Datasource {
   readonly type = 'inline';
@@ -335,13 +338,17 @@ export class InlineDatasource implements Datasource {
   readonly endLine: number;
   readonly byteSize: number;
 
-  /** Internal data - exposed for variable resolution */
+  /**
+   * Internal data - exposed for variable resolution
+   * @internal
+   */
   readonly data: unknown;
   private _isObject: boolean;
   
   /** Internal location storage (sorted by propertyPath) */
   private _locations: InternalLocation[];
 
+  /** @internal Created by embedoc from the markers of a document. */
   constructor(
     data: unknown,
     format: string,
@@ -420,6 +427,7 @@ export class InlineDatasource implements Datasource {
 
   /**
    * Merge another value into this datasource at a path
+   * @internal
    */
   merge(dotPath: string, value: unknown): void {
     if (!this._isObject) {
@@ -452,6 +460,7 @@ export class InlineDatasource implements Datasource {
 
   /**
    * Get the locations array (read-only access for inspection)
+   * @internal
    */
   get locations(): readonly InternalLocation[] {
     return this._locations;

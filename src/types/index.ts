@@ -30,17 +30,23 @@ export interface GeneratorConfig {
   output_path: string;
   template: string;
   overwrite?: boolean;
+  /**
+   * Generate files only for the records whose fields match: each key is a
+   * field, and its value (or one of its values) must equal the field as a string.
+   * Example: `{ kind: ['class', 'interface'] }`.
+   */
+  where?: Record<string, string | string[]>;
 }
 
 /**
  * Built-in datasource type identifiers.
  */
-export type BuiltinDatasourceType = 'sqlite' | 'csv' | 'json' | 'yaml' | 'glob';
+export type BuiltinDatasourceType = 'sqlite' | 'csv' | 'json' | 'yaml' | 'glob' | 'typescript';
 
 /**
  * Datasource configuration.
  *
- * The `type` field accepts built-in types ('sqlite', 'csv', 'json', 'yaml', 'glob')
+ * The `type` field accepts built-in types ('sqlite', 'csv', 'json', 'yaml', 'glob', 'typescript')
  * or any custom type name registered via `datasources_dir`.
  * Custom types receive the entire config object (including arbitrary properties)
  * in their `create()` method.
@@ -184,6 +190,7 @@ export type QueryResult = Record<string, unknown>[];
  * - `json` - JSON files (use `getAll()`)
  * - `yaml` - YAML files (use `getAll()`)
  * - `glob` - File listings (use `getAll()`)
+ * - `typescript` - Public API of TypeScript entry points (use `getAll()`)
  *
  * @example
  * ```typescript
@@ -204,7 +211,7 @@ export type QueryResult = Record<string, unknown>[];
 export interface Datasource {
   /**
    * Datasource type identifier.
-   * One of: 'sqlite', 'csv', 'json', 'yaml', 'glob', 'inline'
+   * One of: 'sqlite', 'csv', 'json', 'yaml', 'glob', 'typescript', 'inline'
    */
   readonly type: string;
 
@@ -214,7 +221,9 @@ export interface Datasource {
    * **SQLite**: Execute SQL with parameters from marker attributes or frontmatter.
    * This allows dynamic filtering based on the document context.
    *
-   * **CSV/JSON/YAML/Glob**: Parameters are ignored; use `getAll()` instead.
+   * **CSV/JSON/YAML/Glob/TypeScript**: Only `WHERE column = ?` is understood
+   * (the value is `params[0]`, compared as a string); any other query returns
+   * every record. Use `getAll()` for everything.
    *
    * @param sql - SQL query string with `?` placeholders for parameters
    * @param params - Values to bind to the placeholders (prevents SQL injection)
@@ -295,6 +304,184 @@ export interface CustomDatasourceDefinition {
  * from `.embedoc/datasources/index.ts`.
  */
 export type InlineFormatParser = (content: string) => unknown;
+
+// =============================================================================
+// TypeScript API datasource
+// =============================================================================
+
+/**
+ * Configuration of the built-in `typescript` datasource.
+ *
+ * The datasource reads the public API of TypeScript entry points with the
+ * TypeScript compiler API and returns one {@link ApiSymbol} record per exported
+ * symbol. It needs the `typescript` package (>=5.0.0 <7.0.0) installed in the
+ * project; it is an optional peer dependency of embedoc.
+ *
+ * Paths are resolved against the current working directory, like the other
+ * datasources.
+ */
+export interface TypeScriptDatasourceConfig extends DatasourceConfig {
+  type: 'typescript';
+  /** Entry point files whose exports form the public API. */
+  entry_points: string[];
+  /** tsconfig.json to compile with (default: the nearest one above the first entry point). */
+  tsconfig?: string;
+  /** Leave out symbols and members tagged `@internal` (default: true). */
+  exclude_internal?: boolean;
+  /** Leave out `private` and `#private` class members (default: true). */
+  exclude_private?: boolean;
+  /** Leave out symbols declared in external libraries such as node_modules (default: true). */
+  exclude_externals?: boolean;
+  /**
+   * Source link URL with the placeholders `{path}` (relative to the working
+   * directory), `{line}` and `{gitRevision}`. No link is produced without it.
+   */
+  source_link_template?: string;
+  /** Value of `{gitRevision}`. Required when the template uses `{gitRevision}`. */
+  git_revision?: string;
+  /** Record order: `source-order` (file path, then position) or `alphabetical` (default: source-order). */
+  sort?: 'source-order' | 'alphabetical';
+}
+
+/** Kind of an exported API symbol. A `reference` is a second exported name of a symbol. */
+export type ApiSymbolKind =
+  | 'namespace'
+  | 'enum'
+  | 'class'
+  | 'interface'
+  | 'type'
+  | 'variable'
+  | 'function'
+  | 'reference';
+
+/** Kind of a member of a class, interface, object type or enum. */
+export type ApiMemberKind =
+  | 'constructor'
+  | 'property'
+  | 'accessor'
+  | 'method'
+  | 'call-signature'
+  | 'index-signature'
+  | 'enum-member';
+
+/** Where a declaration is in the source. */
+export type ApiSource = {
+  /** Path relative to the common directory of the entry points (for display). */
+  file: string;
+  /** Path relative to the working directory (the `{path}` of the link template). */
+  path: string;
+  /** 1-based line of the declaration name. */
+  line: number;
+  /** Link built from `source_link_template`, or null without a template. */
+  url: string | null;
+};
+
+/** A JSDoc block tag such as `@example`, `@deprecated` or `@see`. */
+export type ApiTag = {
+  /** Tag name without `@`. */
+  tag: string;
+  /** Tag text. `{@link ...}` inline tags are kept as written. */
+  text: string;
+};
+
+/** A type parameter of a declaration or signature. */
+export type ApiTypeParameter = {
+  name: string;
+  constraint: string | null;
+  default: string | null;
+  description: string;
+};
+
+/** A parameter of a signature. */
+export type ApiParameter = {
+  name: string;
+  type: string;
+  optional: boolean;
+  rest: boolean;
+  defaultValue: string | null;
+  description: string;
+};
+
+/** A call, construct, method or accessor signature. */
+export type ApiSignature = {
+  /** Declaration as code, e.g. `function f(a: string): void;`. */
+  code: string;
+  summary: string;
+  tags: ApiTag[];
+  typeParameters: ApiTypeParameter[];
+  parameters: ApiParameter[];
+  /** Return type and `@returns` text; null for constructors and setters. */
+  returns: { type: string; description: string } | null;
+  source: ApiSource;
+};
+
+/** A member of a class, interface, object type alias or enum. */
+export type ApiMember = {
+  name: string;
+  kind: ApiMemberKind;
+  static: boolean;
+  readonly: boolean;
+  optional: boolean;
+  protected: boolean;
+  abstract: boolean;
+  /** Type of a property, index signature or enum member value; null otherwise. */
+  type: string | null;
+  summary: string;
+  tags: ApiTag[];
+  /** Signatures of constructors, methods, accessors (get then set) and call signatures. */
+  signatures: ApiSignature[];
+  source: ApiSource;
+};
+
+/**
+ * A `{@link ...}` target in a symbol's documentation that resolves to an
+ * exported symbol (or a member of one) of the same datasource.
+ */
+export type ApiLinkTarget = {
+  /** Target as written in the comment, e.g. `DBModel.use`. */
+  target: string;
+  /** Exported symbol the target names. */
+  name: string;
+  kind: ApiSymbolKind;
+  kindDir: string;
+  /** Member part of the target (`use` in `DBModel.use`), or null. */
+  member: string | null;
+};
+
+/**
+ * One record of the `typescript` datasource: an exported symbol.
+ *
+ * `name`, `kind`, `kindDir` and `category` are flat so they can be used in
+ * `WHERE column = ?` queries and in generator `output_path` placeholders,
+ * e.g. `./docs/api/{kindDir}/{name}.md`.
+ */
+export type ApiSymbol = {
+  /** Exported name. */
+  name: string;
+  kind: ApiSymbolKind;
+  /** Display name of the kind, e.g. `Class`, `Type Alias`. */
+  kindLabel: string;
+  /** Directory name for the kind, e.g. `classes`, `type-aliases`. */
+  kindDir: string;
+  /** Text of the `@category` tag (also kept in `tags`), or null. */
+  category: string | null;
+  summary: string;
+  tags: ApiTag[];
+  /** Declaration as code for type aliases and variables; null otherwise. */
+  code: string | null;
+  typeParameters: ApiTypeParameter[];
+  extends: string[];
+  implements: string[];
+  /** Overload signatures of a function. */
+  signatures: ApiSignature[];
+  /** Members of a class, interface, enum, or object type alias. */
+  members: ApiMember[];
+  source: ApiSource;
+  /** For a `reference` (`export { A as B }`): the name `A` is documented under; null otherwise. */
+  referenceOf: string | null;
+  /** `{@link ...}` targets (and `referenceOf`) that resolve to exported symbols of the datasource. */
+  links: ApiLinkTarget[];
+};
 
 // =============================================================================
 // Embeds (Templates)
