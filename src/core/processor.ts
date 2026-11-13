@@ -21,6 +21,7 @@ import {
   parseFrontmatter,
   getCommentStyle,
   parseInlineDataMarkers,
+  isMarkdownFile,
 } from './parser.js';
 import { createMarkdownHelper } from '../helpers/markdown.js';
 import { buildInlineDatasources, resolveDotPath, InlineDatasource } from './inline-datasource.js';
@@ -109,8 +110,11 @@ export async function processFile(
     // Calculate frontmatter line offset for accurate line numbers
     const frontmatterLineOffset = frontmatterRaw ? frontmatterRaw.split('\n').length - 1 : 0;
 
+    // In Markdown, markers inside fenced code blocks are example code
+    const parseOptions = { markdown: isMarkdownFile(filePath) };
+
     // Parse inline data markers
-    const inlineDataMarkers = parseInlineDataMarkers(bodyContent, commentStyle);
+    const inlineDataMarkers = parseInlineDataMarkers(bodyContent, commentStyle, parseOptions);
     
     // Adjust line numbers for frontmatter offset
     for (const marker of inlineDataMarkers) {
@@ -147,7 +151,7 @@ export async function processFile(
     }
 
     // Parse markers
-    const markers = parseMarkers(bodyContent, commentStyle);
+    const markers = parseMarkers(bodyContent, commentStyle, parseOptions);
 
     if (markers.length === 0 && inlineDataMarkers.length === 0) {
       return result;

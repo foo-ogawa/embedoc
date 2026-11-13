@@ -102,14 +102,94 @@ export function parseFrontmatter(content: string): ParsedFrontmatter {
 }
 
 /**
+ * Options for {@link parseMarkers} and {@link parseInlineDataMarkers}.
+ */
+export interface MarkerParseOptions {
+  /**
+   * The content is Markdown: markers inside fenced code blocks are example
+   * code, not markers, and are skipped (see {@link isMarkdownFile}).
+   */
+  markdown?: boolean;
+}
+
+/**
+ * Whether a target file is Markdown, by extension (.md, .markdown, .mdx).
+ */
+export function isMarkdownFile(filePath: string): boolean {
+  const ext = filePath.split('.').pop()?.toLowerCase() ?? '';
+  return ext === 'md' || ext === 'markdown' || ext === 'mdx';
+}
+
+/**
+ * Index ranges `[start, end)` of the fenced code blocks of Markdown content.
+ *
+ * A fence is a line of three or more backticks or tildes, indented at most
+ * three spaces. It is closed by a line of the same character, at least as long,
+ * with nothing else on it. A fence that is never closed runs to the end.
+ */
+export function codeFenceRanges(content: string): [number, number][] {
+  const ranges: [number, number][] = [];
+  let open: { char: string; length: number; start: number } | null = null;
+  let offset = 0;
+  for (const line of content.split('\n')) {
+    const next = offset + line.length + 1;
+    const fence = /^ {0,3}(`{3,}|~{3,})(.*)$/.exec(line.replace(/\r$/, ''));
+    if (fence) {
+      const run = fence[1]!;
+      if (open === null) {
+        // A backtick fence's info string cannot contain a backtick.
+        if (!(run[0] === '`' && fence[2]!.includes('`'))) {
+          open = { char: run[0]!, length: run.length, start: offset };
+        }
+      } else if (run[0] === open.char && run.length >= open.length && fence[2]!.trim() === '') {
+        ranges.push([open.start, Math.min(next, content.length)]);
+        open = null;
+      }
+    }
+    offset = next;
+  }
+  if (open !== null) ranges.push([open.start, content.length]);
+  return ranges;
+}
+
+/**
+ * Test for "index is inside one of the ranges" (ranges from {@link codeFenceRanges}).
+ */
+function insideRanges(ranges: [number, number][]): (index: number) => boolean {
+  return (index) => ranges.some(([from, to]) => index >= from && index < to);
+}
+
+/**
+ * First match of a pattern at or after `from` that `skip` does not reject.
+ * Returns the match with `index` relative to `content`.
+ */
+function findOutside(
+  pattern: RegExp,
+  content: string,
+  from: number,
+  skip: (index: number) => boolean
+): RegExpExecArray | null {
+  const global = new RegExp(pattern.source, pattern.flags.includes('g') ? pattern.flags : pattern.flags + 'g');
+  global.lastIndex = from;
+  let match: RegExpExecArray | null;
+  while ((match = global.exec(content)) !== null) {
+    if (!skip(match.index)) return match;
+    if (match[0].length === 0) global.lastIndex++;
+  }
+  return null;
+}
+
+/**
  * Parse all markers in a file
  */
 export function parseMarkers(
   content: string,
-  commentStyle: CommentStyle
+  commentStyle: CommentStyle,
+  options: MarkerParseOptions = {}
 ): ParsedMarker[] {
   const markers: ParsedMarker[] = [];
   const { start, end } = commentStyle;
+  const inFence = insideRanges(options.markdown ? codeFenceRanges(content) : []);
 
   const startEscaped = escapeRegExp(start);
   const endEscaped = end ? escapeRegExp(end) : '';
@@ -145,6 +225,9 @@ export function parseMarkers(
 
   while ((match = startPattern.exec(content)) !== null) {
     const startIndex = match.index;
+    if (inFence(startIndex)) {
+      continue;
+    }
     const startMarkerLine = match[0];
     const templateName = match[1];
     const attrString = match[2]?.trim() ?? '';
@@ -152,7 +235,8 @@ export function parseMarkers(
     // Search for end marker from after start marker
     const afterStart = startIndex + startMarkerLine.length;
     const remainingContent = content.slice(afterStart);
-    const endMatch = endPattern.exec(remainingContent);
+    const endFound = findOutside(endPattern, content, afterStart, inFence);
+    const endMatch = endFound && { index: endFound.index - afterStart, 0: endFound[0] };
 
     if (endMatch) {
       // The end marker's own indentation sits in front of the match. It belongs to the marker
@@ -250,10 +334,12 @@ function getLineNumber(content: string, index: number): number {
  */
 export function parseInlineDataMarkers(
   content: string,
-  commentStyle: CommentStyle
+  commentStyle: CommentStyle,
+  options: MarkerParseOptions = {}
 ): ParsedInlineData[] {
   const results: ParsedInlineData[] = [];
   const { start, end } = commentStyle;
+  const inFence = insideRanges(options.markdown ? codeFenceRanges(content) : []);
 
   const startEscaped = escapeRegExp(start);
   const endEscaped = end ? escapeRegExp(end) : '';
@@ -284,6 +370,9 @@ export function parseInlineDataMarkers(
 
   while ((match = startPattern.exec(content)) !== null) {
     const startIndex = match.index;
+    if (inFence(startIndex)) {
+      continue;
+    }
     const startMarkerLine = match[0];
     const name = match[1];
     const attrString = match[2]?.trim() ?? '';
@@ -300,10 +389,8 @@ export function parseInlineDataMarkers(
     // Find end marker - search from after start marker
     const afterStart = startIndex + startMarkerLine.length;
     const remainingContent = content.slice(afterStart);
-    
-    // Reset lastIndex for endPattern search
-    endPattern.lastIndex = 0;
-    const endMatch = endPattern.exec(remainingContent);
+    const endFound = findOutside(endPattern, content, afterStart, inFence);
+    const endMatch = endFound && { index: endFound.index - afterStart, 0: endFound[0] };
 
     if (endMatch) {
       const dataContent = remainingContent.slice(0, endMatch.index);

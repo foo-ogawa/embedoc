@@ -6,8 +6,11 @@ import {
   resolveVariables,
   getCommentStyle,
   guessCommentStyle,
+  parseInlineDataMarkers,
   DEFAULT_COMMENT_STYLES,
 } from '../src/core/parser.js';
+import { processFile } from '../src/core/processor.js';
+import type { EmbedocConfig, EmbedDefinition } from '../src/types/index.js';
 
 describe('parseAttributes', () => {
   it('should parse single attribute with double quotes', () => {
@@ -326,3 +329,90 @@ describe('guessCommentStyle', () => {
   });
 });
 
+
+describe('markers inside Markdown code fences', () => {
+  const html = DEFAULT_COMMENT_STYLES['html']!;
+  const md = { markdown: true };
+
+  const doc = [
+    'Example:',
+    '```markdown',
+    '<!--@embedoc:example id="1"-->',
+    'example content',
+    '<!--@embedoc:end-->',
+    '```',
+    '<!--@embedoc:live id="2"-->',
+    'live content',
+    '<!--@embedoc:end-->',
+  ].join('\n');
+
+  it('skips markers inside a backtick fence in Markdown', () => {
+    expect(parseMarkers(doc, html, md).map((m) => m.templateName)).toEqual(['live']);
+  });
+
+  it('keeps processing them when the content is not Markdown', () => {
+    expect(parseMarkers(doc, html).map((m) => m.templateName)).toEqual(['example', 'live']);
+  });
+
+  it('skips tilde fences and longer fences that contain shorter ones', () => {
+    const content = [
+      '~~~',
+      '<!--@embedoc:a-->x<!--@embedoc:end-->',
+      '~~~',
+      '````md',
+      '```',
+      '<!--@embedoc:b-->x<!--@embedoc:end-->',
+      '```',
+      '<!--@embedoc:c-->x<!--@embedoc:end-->',
+      '````',
+      '<!--@embedoc:live-->x<!--@embedoc:end-->',
+    ].join('\n');
+    expect(parseMarkers(content, html, md).map((m) => m.templateName)).toEqual(['live']);
+  });
+
+  it('does not end a live marker at an end marker inside a fence', () => {
+    const content = [
+      '<!--@embedoc:live-->',
+      '```html',
+      '<!--@embedoc:end-->',
+      '```',
+      'after the example',
+      '<!--@embedoc:end-->',
+    ].join('\n');
+    const [marker] = parseMarkers(content, html, md);
+    expect(marker?.existingContent).toBe('\n```html\n<!--@embedoc:end-->\n```\nafter the example\n');
+  });
+
+  it('treats an unclosed fence as running to the end', () => {
+    const content = '```\n<!--@embedoc:a-->x<!--@embedoc:end-->\n';
+    expect(parseMarkers(content, html, md)).toEqual([]);
+  });
+
+  it('skips inline data markers inside a fence in Markdown', () => {
+    const content = [
+      '```markdown',
+      '<!--@embedoc-data:config format="ini"-->',
+      'host=localhost',
+      '<!--@embedoc-data:end-->',
+      '```',
+      '<!--@embedoc-data:live format="yaml"-->',
+      'a: 1',
+      '<!--@embedoc-data:end-->',
+    ].join('\n');
+    expect(parseInlineDataMarkers(content, html, md).map((d) => d.name)).toEqual(['live']);
+    expect(parseInlineDataMarkers(content, html).map((d) => d.name)).toEqual(['config', 'live']);
+  });
+
+  it('leaves the fenced examples of a Markdown file untouched when it is built', async () => {
+    const embeds: Record<string, EmbedDefinition> = {
+      example: { async render() { return { content: 'REPLACED' }; } },
+      live: { async render() { return { content: 'rendered' }; } },
+    };
+    const config: EmbedocConfig = { version: '1.0', targets: [] };
+    const target = { pattern: '*.md', comment_style: 'html' };
+    const withIni = doc + '\n```markdown\n<!--@embedoc-data:config format="ini"-->\nhost=x\n<!--@embedoc-data:end-->\n```\n';
+    const result = await processFile('README.md', withIni, target, embeds, {}, config, true);
+    expect(result.success).toBe(true);
+    expect(result.markersUpdated).toBe(1);
+  });
+});

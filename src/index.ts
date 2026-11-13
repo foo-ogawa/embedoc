@@ -75,8 +75,11 @@ export {
   getCommentStyle,
   guessCommentStyle,
   parseInlineDataMarkers,
+  isMarkdownFile,
+  codeFenceRanges,
   DEFAULT_COMMENT_STYLES,
 } from './core/parser.js';
+export type { MarkerParseOptions } from './core/parser.js';
 
 // Inline datasource
 export {
