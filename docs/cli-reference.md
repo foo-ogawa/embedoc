@@ -1,8 +1,8 @@
 # embedoc CLI
 
-In-place document generator that auto-updates marker blocks in documents and source code while preserving manually edited sections. Supports multiple datasources (SQLite, CSV, JSON, YAML, glob), programmable TypeScript renderers, Handlebars file generation, and incremental builds with dependency tracking.
+In-place document generator that auto-updates marker blocks in documents and source code while preserving manually edited sections. Supports multiple datasources (SQLite, CSV, JSON, YAML, glob, TypeScript API), programmable TypeScript renderers, Handlebars file generation, and incremental builds with dependency tracking.
 
-**Version:** 0.14.5
+**Version:** 0.14.9
 
 ## Table of Contents
 

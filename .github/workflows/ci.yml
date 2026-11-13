@@ -29,6 +29,11 @@ jobs:
         run: npm run lint --if-present
       - name: Verify contract version matches the package version
         run: npx cli-contracts version-sync --check
+      # The CLI ships the contract embedded in src/generated (`embedoc extract`).
+      # version-sync only checks cli-contract.yaml, so the embedded copy could
+      # lag behind it (it said 0.14.5 while the package was 0.14.9).
+      - name: Verify generated CLI files match cli-contract.yaml
+        run: npx cli-contracts generate && git diff --exit-code -- src/generated docs/cli-reference.md
       - name: Build
         run: npm run build
       - name: Test
