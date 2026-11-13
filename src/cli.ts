@@ -390,7 +390,8 @@ export const inlineFormats = {
 
       // Show results
       const duration = Date.now() - startTime;
-      const generated = results.filter((r) => r.success && !r.skipped).length;
+      const generated = results.filter((r) => r.success && !r.skipped && !r.removed).length;
+      const removed = results.filter((r) => r.success && r.removed).length;
       const skipped = results.filter((r) => r.skipped).length;
       const failed = results.filter((r) => !r.success).length;
 
@@ -398,6 +399,9 @@ export const inlineFormats = {
       console.log(pc.green('✅ Generation completed!'));
       console.log(`   Generated: ${generated}`);
       console.log(`   Skipped (existing): ${skipped}`);
+      if (removed > 0) {
+        console.log(`   Removed (prune): ${removed}`);
+      }
 
       if (failed > 0) {
         console.log(pc.red(`   Failed: ${failed}`));

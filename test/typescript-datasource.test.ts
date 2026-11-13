@@ -25,7 +25,7 @@ let rows: QueryResult;
 const symbol = (name: string) => rows.find((r) => r['name'] === name) as unknown as ApiSymbol;
 
 beforeAll(async () => {
-  const ds = await createDatasource(config());
+  const ds = await createDatasource(config({ pages: ['class', 'interface'] }));
   rows = await ds.getAll();
 }, SLOW);
 
@@ -41,6 +41,8 @@ describe('TypeScript datasource', () => {
       'variable:makeId',
       'variable:settings',
       'enum:Color',
+      'class:Worker',
+      'function:bound',
     ]);
   });
 
@@ -54,8 +56,8 @@ describe('TypeScript datasource', () => {
     expect(symbol('Store').source).toEqual({
       file: 'store.ts',
       path: 'test/fixtures/ts-api/src/store.ts',
-      line: 29,
-      url: 'https://example.com/r/blob/main/test/fixtures/ts-api/src/store.ts#L29',
+      line: 37,
+      url: 'https://example.com/r/blob/main/test/fixtures/ts-api/src/store.ts#L37',
     });
   });
 
@@ -79,7 +81,7 @@ describe('TypeScript datasource', () => {
       type: 'string',
       summary: 'Display label',
     });
-    expect(symbol('StoreOptions').members.map((m) => m.name)).toEqual(['name', 'limit']);
+    expect(symbol('StoreOptions').members.map((m) => m.name)).toEqual(['name', 'limit', 'mode']);
   });
 
   it('keeps overload signatures and drops the implementation', () => {
@@ -124,10 +126,40 @@ describe('TypeScript datasource', () => {
     );
   });
 
-  it('resolves {@link} targets that are exported symbols', () => {
+  it('resolves {@link} targets and type names that are exported symbols', () => {
     expect(symbol('Store').links).toEqual([
-      { target: 'Store.get', name: 'Store', kind: 'class', kindDir: 'classes', member: 'get' },
-      { target: 'greet', name: 'greet', kind: 'function', kindDir: 'functions', member: null },
+      { target: 'Store.get', name: 'Store', kind: 'class', kindDir: 'classes', page: 'classes/Store.md', member: 'get' },
+      { target: 'greet', name: 'greet', kind: 'function', kindDir: 'functions', page: null, member: null },
+      { target: 'StoreOptions', name: 'StoreOptions', kind: 'interface', kindDir: 'interfaces', page: 'interfaces/StoreOptions.md', member: null },
+      { target: 'Store', name: 'Store', kind: 'class', kindDir: 'classes', page: 'classes/Store.md', member: null },
+    ]);
+  });
+
+  it('gives the symbols of the kinds in `pages` a page, and no others', () => {
+    expect(rows.filter((r) => r['hasPage']).map((r) => [r['name'], r['page']])).toEqual([
+      ['StoreOptions', 'interfaces/StoreOptions.md'],
+      ['Store', 'classes/Store.md'],
+      ['Worker', 'classes/Worker.md'],
+    ]);
+    expect(symbol('greet').page).toBeNull();
+  });
+
+  it('keeps a `this` parameter', () => {
+    expect(symbol('bound').signatures[0]).toMatchObject({
+      code: 'function bound(this: Store<string>, key: string): string | undefined;',
+    });
+    expect(symbol('bound').signatures[0]!.parameters.map((p) => [p.name, p.type])).toEqual([
+      ['this', 'Store<string>'],
+      ['key', 'string'],
+    ]);
+  });
+
+  it('marks an abstract class and its abstract members', () => {
+    expect(symbol('Worker').abstract).toBe(true);
+    expect(symbol('Store').abstract).toBe(false);
+    expect(symbol('Worker').members.map((m) => [m.name, m.abstract])).toEqual([
+      ['id', true],
+      ['run', true],
     ]);
   });
 
@@ -138,19 +170,22 @@ describe('TypeScript datasource', () => {
   it('filters with WHERE column = ?', async () => {
     const ds = new TypeScriptDatasource(config());
     const functions = await ds.query('SELECT * WHERE kind = ?', ['function']);
-    expect(functions.map((r) => r['name'])).toEqual(['greet', 'add']);
+    expect(functions.map((r) => r['name'])).toEqual(['greet', 'add', 'bound']);
   }, SLOW);
 
   it('sorts alphabetically when asked', async () => {
     const ds = await createDatasource(config({ sort: 'alphabetical' }));
     const names = (await ds.getAll()).map((r) => r['name']);
-    expect(names).toEqual(['add', 'Color', 'greet', 'Id', 'LegacyStore', 'makeId', 'settings', 'Store', 'StoreOptions']);
+    expect(names).toEqual([
+      'add', 'bound', 'Color', 'greet', 'Id', 'LegacyStore', 'makeId', 'settings', 'Store', 'StoreOptions', 'Worker',
+    ]);
   }, SLOW);
 
   it('rejects a configuration it cannot honour', async () => {
     await expect(createDatasource({ type: 'typescript' })).rejects.toThrow('"entry_points"');
     await expect(createDatasource(config({ git_revision: undefined }))).rejects.toThrow('git_revision');
     await expect(createDatasource(config({ sort: 'size' }))).rejects.toThrow('"sort"');
+    await expect(createDatasource(config({ pages: ['klass'] }))).rejects.toThrow('"pages"');
   });
 });
 
@@ -180,7 +215,7 @@ describe('parseDocComment', () => {
 });
 
 describe('API Markdown rendering', () => {
-  const options = { ownFileKinds: ['class', 'interface'] as ApiSymbol['kind'][], categoryOrder: ['Core', '*'] };
+  const options = { categoryOrder: ['Core', '*'] };
 
   it('renders the index grouped by kind and category, linking symbols that have their own page', () => {
     const index = renderApiIndex(rows, options);
@@ -191,6 +226,8 @@ describe('API Markdown rendering', () => {
       '## Classes',
       '### Core',
       '- [Store](classes/Store.md)',
+      '### Other',
+      '- [Worker](classes/Worker.md)',
       '## Interfaces',
       '### Core',
       '- [StoreOptions](interfaces/StoreOptions.md)',
@@ -209,6 +246,9 @@ describe('API Markdown rendering', () => {
       '#### greet()',
       '##### Parameters',
       '##### Returns',
+      '#### bound()',
+      '##### Parameters',
+      '##### Returns',
       '## References',
       '### LegacyStore',
     ]);
@@ -220,7 +260,7 @@ describe('API Markdown rendering', () => {
 
   it('writes a function documentation once, with deprecation and parameters', () => {
     const index = renderApiIndex(rows, options);
-    const greet = index.slice(index.indexOf('#### greet()'), index.indexOf('## References'));
+    const greet = index.slice(index.indexOf('#### greet()'), index.indexOf('***', index.indexOf('#### greet()')));
     expect(greet).toBe(
       [
         '#### greet()',
@@ -243,7 +283,9 @@ describe('API Markdown rendering', () => {
     expect(page.startsWith('[API](../README.md) / Store\n\n# Class: Store\\<T\\>\n\n')).toBe(true);
     expect(page).toContain('### Basic use\n\n```ts\n@decorated()\nclass Model {}');
     expect(page).toContain('```ts\nnew Store(options: StoreOptions, label?: string): Store<T>;\n```');
-    expect(page).toContain('| <a id="options"></a> `options` (readonly protected) | `StoreOptions` |');
+    expect(page).toContain(
+      '| <a id="options"></a> `options` (readonly protected) | [`StoreOptions`](../interfaces/StoreOptions.md) |'
+    );
     expect(page).toContain(
       'Write a value. See [`Store.get`](../classes/Store.md#get) and [`greet`](../README.md#greet).'
     );
@@ -256,19 +298,54 @@ describe('API Markdown rendering', () => {
     expect(page).not.toContain('<a id="items">');
   });
 
-  it('links within the index when every symbol is on it', () => {
-    const index = renderApiIndex(rows);
+  it('links within the index when no symbol has a page', { timeout: SLOW }, async () => {
+    const index = renderApiIndex(await (await createDatasource(config())).getAll());
     expect(index).toContain('Options of a [`Store`](#store).');
     expect(index).toContain('Renames and re-exports [Store](#store)');
   });
 
   it('gives the same output for the same input', async () => {
-    const again = await (await createDatasource(config())).getAll();
+    const again = await (await createDatasource(config({ pages: ['class', 'interface'] }))).getAll();
     expect(renderApiIndex(again, options)).toBe(renderApiIndex(rows, options));
   }, SLOW);
 
-  it('rejects an unknown kind', () => {
-    expect(() => renderApiIndex(rows, { ownFileKinds: ['klass' as ApiSymbol['kind']] })).toThrow('Unknown symbol kind');
+  it('writes an @example of a member into its table row', () => {
+    const page = renderApiPage(symbol('StoreOptions') as unknown as Record<string, unknown>, options);
+    expect(page).toContain("| Write mode.<br><br>**Example** `new Store({ name: 'a', mode: 'safe' });` |");
+  });
+
+  it('escapes | inside code spans of table cells, so every row has the columns of its header', () => {
+    const pages = rows.filter((r) => r['hasPage']).map((r) => renderApiPage(r, options));
+    const all = [...pages, renderApiIndex(rows, options)].join('\n');
+    expect(all).toContain("`'fast' \\| 'safe'`");
+    const columns = (line: string) => line.replace(/\\\|/g, '').split('|').length;
+    let header = 0;
+    const broken: string[] = [];
+    for (const line of all.split('\n')) {
+      if (!line.startsWith('|')) { header = 0; continue; }
+      if (header === 0) header = columns(line);
+      else if (columns(line) !== header) broken.push(line);
+    }
+    expect(broken).toEqual([]);
+  });
+
+  it('shows a default value even when no parameter has a description', () => {
+    const index = renderApiIndex(rows, options);
+    expect(index).toContain('| `b?` | `number` | **Default** `1` |');
+  });
+
+  it('shows the `this` parameter', () => {
+    const index = renderApiIndex(rows, options);
+    expect(index).toContain('| `this` | [`Store`](classes/Store.md)`<string>` |');
+  });
+
+  it('marks abstract classes and members, and links types to their pages', () => {
+    const worker = renderApiPage(symbol('Worker') as unknown as Record<string, unknown>, options);
+    expect(worker).toContain('# Abstract Class: Worker');
+    expect(worker).toContain('`id` (abstract readonly)');
+    expect(worker).toContain('abstract run(): Promise<void>;');
+    const store = renderApiPage(symbol('Store') as unknown as Record<string, unknown>, options);
+    expect(store).toContain('| `options` | [`StoreOptions`](../interfaces/StoreOptions.md) | Store options |');
   });
 });
 
@@ -280,7 +357,7 @@ describe('api_page generator helper', () => {
     await mkdir(join(dir, 'templates'));
     await writeFile(
       join(dir, 'templates', 'api.hbs'),
-      '{{api_page this own_file_kinds="class,interface" index_file="globals.md"}}'
+      '{{api_page this index_file="globals.md"}}'
     );
   });
 
@@ -288,28 +365,35 @@ describe('api_page generator helper', () => {
     await rm(dir, { recursive: true });
   });
 
-  it('writes one page per record of the kinds chosen by where', { timeout: SLOW }, async () => {
+  it('writes a page for each record that has one, and prunes pages of symbols no longer exported', { timeout: SLOW }, async () => {
+    const out = join(dir, 'out');
+    await mkdir(join(out, 'classes'), { recursive: true });
+    await writeFile(join(out, 'classes', 'Gone.md'), 'stale page of a removed export');
+    await writeFile(join(dir, 'README.md'), 'not matched by output_path');
     const dsConfig = config({
+      pages: ['class', 'interface'],
       generators: [
         {
-          output_path: join(dir, 'out', '{kindDir}', '{name}.md'),
+          output_path: join(out, '{kindDir}', '{name}.md'),
           template: 'api.hbs',
           overwrite: true,
-          where: { kind: ['class', 'interface'] },
+          where: { hasPage: 'true' },
+          prune: true,
         },
       ],
     });
     const embedocConfig: EmbedocConfig = { version: '1.0', targets: [], templates_dir: join(dir, 'templates') };
     const ds = await createDatasource(dsConfig);
     const results = await generateFromDatasource('api', dsConfig, ds, embedocConfig);
-    expect(results.map((r) => [r.success, r.filePath])).toEqual([
-      [true, join(dir, 'out', 'interfaces', 'StoreOptions.md')],
-      [true, join(dir, 'out', 'classes', 'Store.md')],
+    expect(results.map((r) => [r.success, r.removed ?? false, r.filePath])).toEqual([
+      [true, false, join(out, 'interfaces', 'StoreOptions.md')],
+      [true, false, join(out, 'classes', 'Store.md')],
+      [true, false, join(out, 'classes', 'Worker.md')],
+      [true, true, join(out, 'classes', 'Gone.md')],
     ]);
-    const page = await readFile(join(dir, 'out', 'classes', 'Store.md'), 'utf-8');
-    expect(page).toBe(renderApiPage(symbol('Store') as unknown as Record<string, unknown>, {
-      ownFileKinds: ['class', 'interface'],
-      indexFile: 'globals.md',
-    }));
+    await expect(readFile(join(out, 'classes', 'Gone.md'), 'utf-8')).rejects.toThrow();
+    expect(await readFile(join(dir, 'README.md'), 'utf-8')).toBe('not matched by output_path');
+    const page = await readFile(join(out, 'classes', 'Store.md'), 'utf-8');
+    expect(page).toBe(renderApiPage(symbol('Store') as unknown as Record<string, unknown>, { indexFile: 'globals.md' }));
   });
 });
