@@ -80,31 +80,40 @@
     "better-sqlite3": "^11.7.0",
     "chokidar": "^4.0.3",
     "commander": "^13.0.0",
-    "csv-parse": "^7.0.2",
-    "glob": "^11.0.0",
-    "handlebars": "^4.7.8",
+    "csv-parse": "^7.0.3",
+    "glob": "^14.0.6",
+    "handlebars": "^4.7.10",
     "js-yaml": "^4.3.2",
     "picocolors": "^1.1.1",
-    "tsx": "^4.19.2"
+    "tsx": "^4.23.15"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@types/better-sqlite3": "^7.6.12",
     "@types/js-yaml": "^4.0.9",
-    "@types/node": "^22.10.2",
-    "@typescript-eslint/eslint-plugin": "^8.0.0",
-    "@typescript-eslint/parser": "^8.0.0",
-    "cli-contracts": "^0.34.6",
+    "@types/node": "^22.20.5",
+    "@typescript-eslint/eslint-plugin": "^8.72.2",
+    "@typescript-eslint/parser": "^8.72.2",
+    "cli-contracts": "^0.34.12",
     "esbuild": "^0.28.0",
-    "eslint": "^10.8.0",
-    "globals": "^17.8.0",
+    "eslint": "^10.14.0",
+    "globals": "^17.14.0",
     "typedoc": "^0.28.0",
-    "typedoc-plugin-markdown": "^4.9.0",
+    "typedoc-plugin-markdown": "^4.14.1",
     "typescript": "^5.7.2",
-    "vitest": "^4.1.11"
+    "vitest": "^4.1.12"
   },
   "overrides": {
     "js-yaml": "^4.3.2",
-    "vitest": "^4.1.11"
+    "vitest": "^4.1.12",
+    "eslint": {
+      "minimatch": "^11.0.8"
+    },
+    "@eslint/config-array": {
+      "minimatch": "^11.0.8"
+    },
+    "@typescript-eslint/typescript-estree": {
+      "minimatch": "^11.0.8"
+    }
   }
 }
