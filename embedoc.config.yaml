@@ -7,5 +7,14 @@ targets:
   - pattern: "./docs/**/*.md"
     comment_style: html
 
-embeds_dir: "./embeds"
+datasources:
+  # Public API of src/embed-api.ts, written to docs/api/README.md (npm run docs)
+  embed_api:
+    type: typescript
+    entry_points:
+      - "./src/embed-api.ts"
+    source_link_template: "https://github.com/foo-ogawa/embedoc/blob/{gitRevision}/{path}#L{line}"
+    git_revision: main
+
+renderers_dir: "./embeds"
 

@@ -13,12 +13,14 @@ import { createCsvDatasource } from './csv.js';
 import { createJsonDatasource } from './json.js';
 import { createYamlDatasource } from './yaml.js';
 import { createGlobDatasource } from './glob.js';
+import { createTypeScriptDatasource } from './typescript.js';
 
 export { SqliteDatasource, createSqliteDatasource } from './sqlite.js';
 export { CsvDatasource, createCsvDatasource } from './csv.js';
 export { JsonDatasource, createJsonDatasource } from './json.js';
 export { YamlDatasource, createYamlDatasource } from './yaml.js';
 export { GlobDatasource, createGlobDatasource } from './glob.js';
+export { TypeScriptDatasource, createTypeScriptDatasource } from './typescript.js';
 
 /**
  * Create a datasource from config.
@@ -43,6 +45,8 @@ export async function createDatasource(
       return createYamlDatasource(config);
     case 'glob':
       return createGlobDatasource(config);
+    case 'typescript':
+      return createTypeScriptDatasource(config);
     default:
       throw new Error(`Unknown datasource type: "${config.type}". Register custom types in datasources_dir.`);
   }

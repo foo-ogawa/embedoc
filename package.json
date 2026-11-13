@@ -38,7 +38,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "docs": "typedoc",
+    "docs": "npm run build && node dist/cli.js build docs/api/README.md",
     "cli-contracts:generate": "cli-contracts generate",
     "cli-contracts:validate": "cli-contracts validate",
     "prepublishOnly": "npm run lint && npm run build && npm run bundle:min && npm run test",
@@ -98,10 +98,16 @@
     "esbuild": "^0.28.0",
     "eslint": "^10.14.0",
     "globals": "^17.14.0",
-    "typedoc": "^0.28.0",
-    "typedoc-plugin-markdown": "^4.14.1",
     "typescript": "^5.7.2",
     "vitest": "^4.1.12"
+  },
+  "peerDependencies": {
+    "typescript": ">=5.0.0 <7.0.0"
+  },
+  "peerDependenciesMeta": {
+    "typescript": {
+      "optional": true
+    }
   },
   "overrides": {
     "js-yaml": "^4.3.2",

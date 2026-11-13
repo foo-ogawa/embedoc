@@ -28,7 +28,8 @@ This part can also be manually edited.
 - **In-Place Updates**: Auto-generated and manually edited sections coexist in the same file
 - **Multiple Comment Formats**: Supports HTML, block, line, hash, SQL comment formats
 - **Programmable Embeds**: Write marker embedding logic in TypeScript (no compilation required)
-- **Multiple Datasources**: SQLite, CSV, JSON, YAML, and glob support
+- **Multiple Datasources**: SQLite, CSV, JSON, YAML, glob, and the public API of TypeScript code
+- **API References**: Generate API reference pages from TypeScript entry points (no typedoc needed)
 - **Inline Datasources**: Define data directly in documents with `@embedoc-data` markers
 - **File Generation**: Generate new files in bulk using Handlebars templates
 - **Watch Mode**: Monitor file changes and auto-rebuild with incremental builds
@@ -276,6 +277,19 @@ datasources:
   doc_files:
     type: glob
     pattern: "./docs/**/*.md"
+
+  # TypeScript datasource (public API of entry points; needs the typescript package)
+  api:
+    type: typescript
+    entry_points: ["./src/index.ts"]
+    source_link_template: "https://github.com/OWNER/REPO/blob/{gitRevision}/{path}#L{line}"
+    git_revision: main
+    generators:
+      - output_path: "./docs/api/{kindDir}/{name}.md"
+        template: api_page.hbs
+        overwrite: true
+        where:
+          kind: [class, interface, function]
 
 # Renderer directory (TypeScript) - default: ".embedoc/renderers"
 renderers_dir: ".embedoc/renderers"
@@ -558,6 +572,103 @@ datasources:
 ```
 
 Returns array of file info objects with `path`, `name`, `ext`, etc.
+
+### TypeScript (Public API)
+
+Reads the public API of TypeScript entry points with the TypeScript compiler API and
+returns one record per exported symbol. Use it to write API references in place of typedoc.
+
+```yaml
+datasources:
+  api:
+    type: typescript
+    entry_points:
+      - "./src/index.ts"
+    source_link_template: "https://github.com/OWNER/REPO/blob/{gitRevision}/{path}#L{line}"
+    git_revision: main
+```
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `entry_points` | (required) | Files whose exports are the public API |
+| `tsconfig` | nearest `tsconfig.json` above the first entry point | Compiler options to use |
+| `exclude_internal` | `true` | Leave out symbols and members tagged `@internal` |
+| `exclude_private` | `true` | Leave out `private` and `#private` members |
+| `exclude_externals` | `true` | Leave out symbols declared in external libraries (node_modules) |
+| `source_link_template` | none | Source link with `{path}` (relative to the working directory), `{line}` and `{gitRevision}` |
+| `git_revision` | none | Value of `{gitRevision}`; required when the template uses it |
+| `sort` | `source-order` | Record order: `source-order` (file path, then position) or `alphabetical` |
+
+The `typescript` package (>=5.0.0 <7.0.0) must be installed in your project; it is an optional
+peer dependency of embedoc. `git_revision` is a fixed value (such as a branch name), not read from
+git, so the same sources always give the same records and the same Markdown.
+
+**Records** (see [`ApiSymbol`](./docs/api/README.md#apisymbol)):
+
+| Field | Description |
+|-------|-------------|
+| `name` | Exported name |
+| `kind` | `namespace`, `enum`, `class`, `interface`, `type`, `variable`, `function`, or `reference` (a second exported name: `export { A as B }`) |
+| `kindLabel`, `kindDir` | Display name (`Type Alias`) and directory name (`type-aliases`) of the kind |
+| `category` | Text of the `@category` tag, or `null` |
+| `summary`, `tags` | Documentation comment; block tags such as `@example` and `@deprecated` |
+| `code` | Declaration code of a type alias or variable |
+| `signatures` | Overload signatures of a function (parameters, return type, documentation) |
+| `members` | Constructors, properties, accessors, methods and index signatures of a class, interface, object type or variable, and members of an enum |
+| `source` | `file`, `path`, `line` and `url` of the declaration |
+
+A variable initialized with an arrow function or function expression (and no type annotation)
+is a `function`. `{@link ...}` targets that name exported symbols are listed in `links`, so a
+renderer of one record can link them.
+
+**Rendering**: `renderApiIndex(records, options)` writes the index (symbols grouped by kind and
+`@category`), and `renderApiPage(record, options)` writes the page of one symbol. Options:
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `ownFileKinds` | none | Kinds that get a page of their own at `<kindDir>/<name>.md`; the others are written in full on the index |
+| `categoryOrder` | none | Category order; `*` marks where unlisted categories go (alphabetically). Symbols without `@category` are in `Other` |
+| `indexFile` | `README.md` | File name of the index page, for links from symbol pages |
+| `headingLevel` | `2` | Heading level of the kind groups on the index |
+
+The index goes into a document with a renderer:
+
+```typescript
+// .embedoc/renderers/api_index.ts — <!--@embedoc:api_index-->
+import { defineEmbed, renderApiIndex } from 'embedoc';
+
+export default defineEmbed({
+  dependsOn: ['api'],
+  async render(ctx) {
+    const records = await ctx.datasources['api'].getAll();
+    return {
+      content: renderApiIndex(records, {
+        ownFileKinds: ['class', 'interface', 'function'],
+        categoryOrder: ['Core', '*'],
+      }),
+    };
+  },
+});
+```
+
+Symbol pages are written by a generator whose template uses the `api_page` helper
+(`where` picks the kinds that get a page):
+
+```yaml
+    generators:
+      - output_path: "./docs/api/{kindDir}/{name}.md"
+        template: api_page.hbs
+        overwrite: true
+        where:
+          kind: [class, interface, function]
+```
+
+```handlebars
+{{!-- .embedoc/templates/api_page.hbs --}}
+{{api_page this own_file_kinds="class,interface,function" index_file="README.md"}}
+```
+
+Run `embedoc generate --datasource api` for the pages, then `embedoc build` for the index.
 
 ---
 
@@ -854,7 +965,12 @@ datasources:
       - output_path: "./docs/tables/{table_name}.md"
         template: table_doc.hbs
         overwrite: false  # Don't overwrite existing files
+        where:            # Optional: only records whose fields match
+          schema: [public, audit]
 ```
+
+`where` maps a record field to a value or a list of values; a file is generated only for the
+records whose every listed field equals (as a string) one of its values.
 
 ### Template (Handlebars)
 
@@ -890,6 +1006,12 @@ Created: {{today}}
 | `{{#if condition}}` | Conditional | `{{#if is_primary}}✔{{/if}}` |
 | `{{#each items}}` | Loop | `{{#each columns}}{{name}}{{/each}}` |
 | `{{#unless condition}}` | Negation | `{{#unless nullable}}NOT NULL{{/unless}}` |
+| `{{eq a b}}`, `{{ne a b}}`, `{{gt a b}}`, `{{lt a b}}` | Comparison (for `#if`) | `{{#if (eq type "int")}}…{{/if}}` |
+| `{{and a b}}`, `{{or a b}}` | Logical AND / OR (for `#if`) | `{{#if (and pk notnull)}}…{{/if}}` |
+| `{{json value}}` | JSON (2-space indent) | `{"a": 1}` |
+| `{{uppercase s}}`, `{{lowercase s}}`, `{{capitalize s}}` | Case conversion | `USERS`, `users`, `Users` |
+| `{{replace s search replacement}}` | Replace every match of a regular expression | `{{replace name "_" "-"}}` |
+| `{{api_page this own_file_kinds="..." index_file="..."}}` | Page of a `typescript` datasource record (see [TypeScript](#typescript-public-api)) | Markdown |
 
 ### Run Generation
 
@@ -1070,6 +1192,8 @@ import {
   
   // Helpers
   createMarkdownHelper,
+  renderApiIndex,   // index of a typescript datasource
+  renderApiPage,    // page of one typescript datasource record
   
   // Constants
   DEFAULT_COMMENT_STYLES,
