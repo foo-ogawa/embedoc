@@ -251,10 +251,13 @@ function signatureBlocks(ctx: Context, sig: ApiSignature, level: number): string
   return out;
 }
 
+/**
+ * Heading of a member: its plain name, so its anchor is the name (`#find`),
+ * which is what links use. `static` / `abstract` show in the signature code.
+ */
 function memberTitle(member: ApiMember): string {
-  const flags = [member.static ? 'static ' : '', member.abstract ? 'abstract ' : ''].join('');
   const name = member.kind === 'method' ? `${member.name}()` : member.name;
-  return escapeMarkdown(`${flags}${name}`);
+  return escapeMarkdown(name);
 }
 
 function memberBlocks(ctx: Context, members: ApiMember[], level: number): string[] {

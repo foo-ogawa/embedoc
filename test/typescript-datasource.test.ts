@@ -65,11 +65,20 @@ describe('TypeScript datasource', () => {
       'property:count',
       'property:options',
       'constructor:constructor',
+      'property:label',
       'accessor:size',
       'method:get',
       'method:set',
+      'method:create',
     ]);
     expect(store.members.find((m) => m.name === 'options')).toMatchObject({ protected: true, readonly: true });
+    // A constructor parameter property is a property, described by the constructor's @param.
+    expect(store.members.find((m) => m.name === 'label')).toMatchObject({
+      readonly: true,
+      optional: true,
+      type: 'string',
+      summary: 'Display label',
+    });
     expect(symbol('StoreOptions').members.map((m) => m.name)).toEqual(['name', 'limit']);
   });
 
@@ -233,11 +242,16 @@ describe('API Markdown rendering', () => {
     const page = renderApiPage(symbol('Store') as unknown as Record<string, unknown>, options);
     expect(page.startsWith('[API](../README.md) / Store\n\n# Class: Store\\<T\\>\n\n')).toBe(true);
     expect(page).toContain('### Basic use\n\n```ts\n@decorated()\nclass Model {}');
-    expect(page).toContain('```ts\nnew Store(options: StoreOptions): Store<T>;\n```');
+    expect(page).toContain('```ts\nnew Store(options: StoreOptions, label?: string): Store<T>;\n```');
     expect(page).toContain('| <a id="options"></a> `options` (readonly protected) | `StoreOptions` |');
     expect(page).toContain(
       'Write a value. See [`Store.get`](../classes/Store.md#get) and [`greet`](../README.md#greet).'
     );
+    // A static method's heading is its plain name, so links to `#create` work.
+    expect(page).toContain(
+      '### create()\n\n```ts\nstatic create<V>(name: string): Store<V>;\n```'
+    );
+    expect(page).toContain('| `V` | Type of the values |');
     expect(page).not.toContain('reset()');
     expect(page).not.toContain('<a id="items">');
   });

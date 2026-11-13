@@ -35,8 +35,9 @@ export class Store<T> {
   /**
    * Create a store.
    * @param options - Store options
+   * @param label - Display label
    */
-  constructor(options: StoreOptions) {
+  constructor(options: StoreOptions, public readonly label = 'store') {
     this.options = options;
   }
 
@@ -65,6 +66,14 @@ export class Store<T> {
   set(key: string, value: T): this {
     this.items.set(key, value);
     return this;
+  }
+
+  /**
+   * Create a store with default options.
+   * @typeParam V - Type of the values
+   */
+  static create<V>(name: string): Store<V> {
+    return new Store<V>({ name });
   }
 
   /** @internal */

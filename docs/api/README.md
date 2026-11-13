@@ -1358,7 +1358,7 @@ export default defineEmbed({
 function renderApiIndex(records: QueryResult, options?: ApiMarkdownOptions): string;
 ```
 
-Defined in: [helpers/api-markdown.ts:385](https://github.com/foo-ogawa/embedoc/blob/main/src/helpers/api-markdown.ts#L385)
+Defined in: [helpers/api-markdown.ts:388](https://github.com/foo-ogawa/embedoc/blob/main/src/helpers/api-markdown.ts#L388)
 
 Render the index page of an API: symbols grouped by kind (and by `@category`).
 
@@ -1386,7 +1386,7 @@ Markdown
 function renderApiPage(record: Record<string, unknown>, options?: ApiMarkdownOptions): string;
 ```
 
-Defined in: [helpers/api-markdown.ts:426](https://github.com/foo-ogawa/embedoc/blob/main/src/helpers/api-markdown.ts#L426)
+Defined in: [helpers/api-markdown.ts:429](https://github.com/foo-ogawa/embedoc/blob/main/src/helpers/api-markdown.ts#L429)
 
 Render the page of one symbol (for `<kindDir>/<name>.md`).
 

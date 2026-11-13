@@ -694,6 +694,7 @@ class ApiExtractor {
     for (const key of order) {
       const member = this.member(groups.get(key)!, ownerName);
       if (member) members.push(member);
+      if (key === 'constructor') members.push(...this.parameterProperties(groups.get(key)!));
     }
     if (this.options.sort === 'alphabetical') {
       members.sort((a, b) => compareText(a.name, b.name));
@@ -708,13 +709,15 @@ class ApiExtractor {
     if (this.isHidden(doc.tags)) return null;
     const mods = this.modifiers(first);
     const isStatic = mods.has(ts.SyntaxKind.StaticKeyword);
-    const staticPrefix = isStatic ? 'static ' : '';
+    const isAbstract = mods.has(ts.SyntaxKind.AbstractKeyword);
+    // Modifiers shown in the signature code (headings use the plain name).
+    const staticPrefix = `${isStatic ? 'static ' : ''}${isAbstract ? 'abstract ' : ''}`;
     const base = {
       static: isStatic,
       readonly: mods.has(ts.SyntaxKind.ReadonlyKeyword),
       optional: (first as { questionToken?: TS.Node }).questionToken !== undefined,
       protected: mods.has(ts.SyntaxKind.ProtectedKeyword),
-      abstract: mods.has(ts.SyntaxKind.AbstractKeyword),
+      abstract: isAbstract,
       summary: doc.summary,
       tags: doc.tags,
       source: this.sourceOf(first),
@@ -822,6 +825,39 @@ class ApiExtractor {
     }
     if (this.options.sort === 'alphabetical') {
       members.sort((a, b) => compareText(a.name, b.name));
+    }
+    return members;
+  }
+
+  /**
+   * Properties declared by constructor parameters (`constructor(public readonly x: T)`).
+   * Their description is the constructor's `@param` text.
+   */
+  private parameterProperties(elements: (TS.ClassElement | TS.TypeElement)[]): ApiMember[] {
+    const { ts } = this;
+    const members: ApiMember[] = [];
+    for (const ctor of elements) {
+      if (!ts.isConstructorDeclaration(ctor)) continue;
+      const doc = this.docOf(ctor);
+      for (const param of ctor.parameters) {
+        if (!ts.isParameterPropertyDeclaration(param, ctor) || !ts.isIdentifier(param.name)) continue;
+        const mods = this.modifiers(param);
+        if (this.options.excludePrivate && mods.has(ts.SyntaxKind.PrivateKeyword)) continue;
+        members.push({
+          name: param.name.text,
+          kind: 'property',
+          static: false,
+          readonly: mods.has(ts.SyntaxKind.ReadonlyKeyword),
+          optional: param.questionToken !== undefined || param.initializer !== undefined,
+          protected: mods.has(ts.SyntaxKind.ProtectedKeyword),
+          abstract: false,
+          type: this.typeText(param.type, () => this.checker.getTypeAtLocation(param)),
+          summary: doc.parameters.get(param.name.text) ?? '',
+          tags: [],
+          signatures: [],
+          source: this.sourceOf(param),
+        });
+      }
     }
     return members;
   }
