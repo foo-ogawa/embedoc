@@ -42,7 +42,8 @@
     "cli-contracts:generate": "cli-contracts generate",
     "cli-contracts:validate": "cli-contracts validate",
     "prepublishOnly": "npm run lint && npm run build && npm run bundle:min && npm run test",
-    "test:ci": "vitest run"
+    "test:ci": "vitest run",
+    "audit:signatures": "npx --yes npm@11.19.1 audit signatures"
   },
   "keywords": [
     "markdown",
