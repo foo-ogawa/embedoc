@@ -129,7 +129,7 @@ jobs:
         run: npm rebuild better-sqlite3 --ignore-scripts=false
       - name: Verify npm signatures
         if: steps.audit.outcome == 'failure' && steps.diff.outcome == 'failure'
-        run: npm audit signatures
+        run: npm run audit:signatures
       - name: Lint
         if: steps.audit.outcome == 'failure' && steps.diff.outcome == 'failure'
         run: npm run lint --if-present
