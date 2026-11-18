@@ -42,8 +42,14 @@ jobs:
       - name: Rebuild better-sqlite3
         if: steps.tag.outcome == 'failure'
         run: npm rebuild better-sqlite3 --ignore-scripts=false
-      - name: Audit
+      - name: Audit (production dependencies)
+        # Same policy as ci.yml: blocking audit scoped to what a consumer installs.
         if: steps.tag.outcome == 'failure'
+        run: npm audit --omit=dev --audit-level=moderate
+      - name: Audit including dev dependencies (report only)
+        # Non-blocking visibility for the dev toolchain. See ci.yml.
+        if: steps.tag.outcome == 'failure'
+        continue-on-error: true
         run: npm audit --audit-level=moderate
       - name: Verify npm signatures
         if: steps.tag.outcome == 'failure'
