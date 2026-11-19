@@ -4,7 +4,7 @@
  */
 
 import { readFile, writeFile, mkdir, access, unlink } from 'node:fs/promises';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import Handlebars from 'handlebars';
 import type {
   EmbedocConfig,
@@ -13,7 +13,7 @@ import type {
   GenerateResult,
   Datasource,
 } from '../types/index.js';
-import { glob } from 'glob';
+import { globFiles } from '../utils/glob.js';
 import { renderApiPage } from '../helpers/api-markdown.js';
 
 /**
@@ -122,6 +122,23 @@ function resolveOutputPath(
 }
 
 /**
+ * Reject an output path that a record's values take out of the directory
+ * output_path names before its first placeholder: a placeholder fills in a
+ * name below that directory, never a path out of it.
+ */
+function assertInsideOutputRoot(pathTemplate: string, outputPath: string): void {
+  const open = pathTemplate.indexOf('{');
+  if (open === -1) return;
+  const root = dirname(pathTemplate.slice(0, open) + '_');
+  const rel = relative(resolve(root), resolve(outputPath));
+  if (rel === '' || rel === '..' || rel.startsWith(`..${sep}`) || isAbsolute(rel)) {
+    throw new Error(
+      `Output path "${outputPath}" is outside "${root}", where output_path "${pathTemplate}" places its files`
+    );
+  }
+}
+
+/**
  * Check if file exists
  */
 async function fileExists(filePath: string): Promise<boolean> {
@@ -153,6 +170,8 @@ async function generateFile(
   };
 
   try {
+    assertInsideOutputRoot(generatorConfig.output_path, outputPath);
+
     // Check existing file
     const exists = await fileExists(outputPath);
 
@@ -221,7 +240,7 @@ async function pruneOutputs(
 ): Promise<GenerateResult[]> {
   const pattern = outputPath.replace(/\{[^}]+\}/g, '*');
   const results: GenerateResult[] = [];
-  for (const file of (await glob(pattern, { nodir: true })).sort()) {
+  for (const file of globFiles(pattern)) {
     if (keep.has(resolve(file))) continue;
     const result: GenerateResult = { filePath: file, success: true, skipped: false, removed: true };
     try {

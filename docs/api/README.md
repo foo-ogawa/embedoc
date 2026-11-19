@@ -9,7 +9,7 @@ Everything below is generated from [`src/embed-api.ts`](../../src/embed-api.ts) 
 
 ### InlineDatasource
 
-Defined in: [core/inline-datasource.ts:333](https://github.com/foo-ogawa/embedoc/blob/main/src/core/inline-datasource.ts#L333)
+Defined in: [core/inline-datasource.ts:345](https://github.com/foo-ogawa/embedoc/blob/main/src/core/inline-datasource.ts#L345)
 
 Datasource for document-local data defined with `@embedoc-data` markers.
 
@@ -24,12 +24,12 @@ and can read where each property was defined with [`InlineDatasource.getMeta`](#
 
 | Property | Type | Description | Defined in |
 | ------ | ------ | ------ | ------ |
-| <a id="type"></a> `type` (readonly) | `"inline"` |  | [core/inline-datasource.ts:334](https://github.com/foo-ogawa/embedoc/blob/main/src/core/inline-datasource.ts#L334) |
-| <a id="format"></a> `format` (readonly) | `string` |  | [core/inline-datasource.ts:335](https://github.com/foo-ogawa/embedoc/blob/main/src/core/inline-datasource.ts#L335) |
-| <a id="documentpath"></a> `documentPath` (readonly) | `string` |  | [core/inline-datasource.ts:336](https://github.com/foo-ogawa/embedoc/blob/main/src/core/inline-datasource.ts#L336) |
-| <a id="startline"></a> `startLine` (readonly) | `number` |  | [core/inline-datasource.ts:337](https://github.com/foo-ogawa/embedoc/blob/main/src/core/inline-datasource.ts#L337) |
-| <a id="endline"></a> `endLine` (readonly) | `number` |  | [core/inline-datasource.ts:338](https://github.com/foo-ogawa/embedoc/blob/main/src/core/inline-datasource.ts#L338) |
-| <a id="bytesize"></a> `byteSize` (readonly) | `number` |  | [core/inline-datasource.ts:339](https://github.com/foo-ogawa/embedoc/blob/main/src/core/inline-datasource.ts#L339) |
+| <a id="type"></a> `type` (readonly) | `"inline"` |  | [core/inline-datasource.ts:346](https://github.com/foo-ogawa/embedoc/blob/main/src/core/inline-datasource.ts#L346) |
+| <a id="format"></a> `format` (readonly) | `string` |  | [core/inline-datasource.ts:347](https://github.com/foo-ogawa/embedoc/blob/main/src/core/inline-datasource.ts#L347) |
+| <a id="documentpath"></a> `documentPath` (readonly) | `string` |  | [core/inline-datasource.ts:348](https://github.com/foo-ogawa/embedoc/blob/main/src/core/inline-datasource.ts#L348) |
+| <a id="startline"></a> `startLine` (readonly) | `number` |  | [core/inline-datasource.ts:349](https://github.com/foo-ogawa/embedoc/blob/main/src/core/inline-datasource.ts#L349) |
+| <a id="endline"></a> `endLine` (readonly) | `number` |  | [core/inline-datasource.ts:350](https://github.com/foo-ogawa/embedoc/blob/main/src/core/inline-datasource.ts#L350) |
+| <a id="bytesize"></a> `byteSize` (readonly) | `number` |  | [core/inline-datasource.ts:351](https://github.com/foo-ogawa/embedoc/blob/main/src/core/inline-datasource.ts#L351) |
 
 #### Methods
 
@@ -39,7 +39,7 @@ and can read where each property was defined with [`InlineDatasource.getMeta`](#
 query(_sql: string, _params?: unknown[]): Promise<QueryResult>;
 ```
 
-Defined in: [core/inline-datasource.ts:380](https://github.com/foo-ogawa/embedoc/blob/main/src/core/inline-datasource.ts#L380)
+Defined in: [core/inline-datasource.ts:392](https://github.com/foo-ogawa/embedoc/blob/main/src/core/inline-datasource.ts#L392)
 
 Query is not fully supported for inline datasources
 Returns all data or filters by simple conditions
@@ -63,7 +63,7 @@ Returns all data or filters by simple conditions
 getAll(): Promise<QueryResult>;
 ```
 
-Defined in: [core/inline-datasource.ts:392](https://github.com/foo-ogawa/embedoc/blob/main/src/core/inline-datasource.ts#L392)
+Defined in: [core/inline-datasource.ts:404](https://github.com/foo-ogawa/embedoc/blob/main/src/core/inline-datasource.ts#L404)
 
 Get all data - returns array for Datasource interface compatibility
 
@@ -79,7 +79,7 @@ Get all data - returns array for Datasource interface compatibility
 getRawData(): unknown;
 ```
 
-Defined in: [core/inline-datasource.ts:403](https://github.com/foo-ogawa/embedoc/blob/main/src/core/inline-datasource.ts#L403)
+Defined in: [core/inline-datasource.ts:415](https://github.com/foo-ogawa/embedoc/blob/main/src/core/inline-datasource.ts#L415)
 
 Get raw data (object or array)
 
@@ -95,7 +95,7 @@ Get raw data (object or array)
 get(dotPath: string): Promise<unknown>;
 ```
 
-Defined in: [core/inline-datasource.ts:410](https://github.com/foo-ogawa/embedoc/blob/main/src/core/inline-datasource.ts#L410)
+Defined in: [core/inline-datasource.ts:422](https://github.com/foo-ogawa/embedoc/blob/main/src/core/inline-datasource.ts#L422)
 
 Get value at dot-path
 
@@ -117,7 +117,7 @@ Get value at dot-path
 isObjectType(): boolean;
 ```
 
-Defined in: [core/inline-datasource.ts:417](https://github.com/foo-ogawa/embedoc/blob/main/src/core/inline-datasource.ts#L417)
+Defined in: [core/inline-datasource.ts:429](https://github.com/foo-ogawa/embedoc/blob/main/src/core/inline-datasource.ts#L429)
 
 Check if datasource is object type (vs array)
 
@@ -133,7 +133,7 @@ Check if datasource is object type (vs array)
 close(): Promise<void>;
 ```
 
-Defined in: [core/inline-datasource.ts:424](https://github.com/foo-ogawa/embedoc/blob/main/src/core/inline-datasource.ts#L424)
+Defined in: [core/inline-datasource.ts:436](https://github.com/foo-ogawa/embedoc/blob/main/src/core/inline-datasource.ts#L436)
 
 Close (no-op for inline)
 
@@ -149,7 +149,7 @@ Close (no-op for inline)
 getMeta(propertyPath?: string, targetDocPath?: string): InlineDefinitionLocation | null;
 ```
 
-Defined in: [core/inline-datasource.ts:445](https://github.com/foo-ogawa/embedoc/blob/main/src/core/inline-datasource.ts#L445)
+Defined in: [core/inline-datasource.ts:457](https://github.com/foo-ogawa/embedoc/blob/main/src/core/inline-datasource.ts#L457)
 
 Get location metadata for a specific property definition
 
@@ -174,7 +174,7 @@ Location metadata or null if not found
 getAllMeta(targetDocPath?: string): InlineDefinitionLocation[];
 ```
 
-Defined in: [core/inline-datasource.ts:457](https://github.com/foo-ogawa/embedoc/blob/main/src/core/inline-datasource.ts#L457)
+Defined in: [core/inline-datasource.ts:469](https://github.com/foo-ogawa/embedoc/blob/main/src/core/inline-datasource.ts#L469)
 
 Get all definition locations with relative paths calculated
 
@@ -215,7 +215,7 @@ Location metadata for an inline definition
 
 ### ApiMarkdownOptions
 
-Defined in: [helpers/api-markdown.ts:22](https://github.com/foo-ogawa/embedoc/blob/main/src/helpers/api-markdown.ts#L22)
+Defined in: [helpers/api-markdown.ts:23](https://github.com/foo-ogawa/embedoc/blob/main/src/helpers/api-markdown.ts#L23)
 
 Options for [`renderApiIndex`](#renderapiindex) and [`renderApiPage`](#renderapipage).
 
@@ -223,9 +223,9 @@ Options for [`renderApiIndex`](#renderapiindex) and [`renderApiPage`](#renderapi
 
 | Property | Type | Description | Defined in |
 | ------ | ------ | ------ | ------ |
-| <a id="categoryorder"></a> `categoryOrder?` | `string[]` | Order of category headings. `*` marks where the categories that are not listed go (alphabetically); without `*` they go last. Symbols without a `@category` tag are in the category `Other`. Category headings appear only in kind groups where at least one symbol has a category. | [helpers/api-markdown.ts:29](https://github.com/foo-ogawa/embedoc/blob/main/src/helpers/api-markdown.ts#L29) |
-| <a id="indexfile"></a> `indexFile?` | `string` | File name of the index page, for links from symbol pages (default: `README.md`). | [helpers/api-markdown.ts:31](https://github.com/foo-ogawa/embedoc/blob/main/src/helpers/api-markdown.ts#L31) |
-| <a id="headinglevel"></a> `headingLevel?` | `number` | Heading level of the kind groups on the index page (default: 2). | [helpers/api-markdown.ts:33](https://github.com/foo-ogawa/embedoc/blob/main/src/helpers/api-markdown.ts#L33) |
+| <a id="categoryorder"></a> `categoryOrder?` | `string[]` | Order of category headings. `*` marks where the categories that are not listed go (alphabetically); without `*` they go last. Symbols without a `@category` tag are in the category `Other`. Category headings appear only in kind groups where at least one symbol has a category. | [helpers/api-markdown.ts:30](https://github.com/foo-ogawa/embedoc/blob/main/src/helpers/api-markdown.ts#L30) |
+| <a id="indexfile"></a> `indexFile?` | `string` | File name of the index page, for links from symbol pages (default: `README.md`). | [helpers/api-markdown.ts:32](https://github.com/foo-ogawa/embedoc/blob/main/src/helpers/api-markdown.ts#L32) |
+| <a id="headinglevel"></a> `headingLevel?` | `number` | Heading level of the kind groups on the index page (default: 2). | [helpers/api-markdown.ts:34](https://github.com/foo-ogawa/embedoc/blob/main/src/helpers/api-markdown.ts#L34) |
 
 ***
 
@@ -261,7 +261,7 @@ in their `create()` method.
 
 ### Datasource
 
-Defined in: [types/index.ts:217](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L217)
+Defined in: [types/index.ts:220](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L220)
 
 Datasource interface for accessing external data.
 
@@ -301,7 +301,7 @@ const allData = await ds.getAll();
 
 | Property | Type | Description | Defined in |
 | ------ | ------ | ------ | ------ |
-| <a id="type"></a> `type` (readonly) | `string` | Datasource type identifier. One of: 'sqlite', 'csv', 'json', 'yaml', 'glob', 'typescript', 'inline' | [types/index.ts:222](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L222) |
+| <a id="type"></a> `type` (readonly) | `string` | Datasource type identifier. One of: 'sqlite', 'csv', 'json', 'yaml', 'glob', 'typescript', 'inline' | [types/index.ts:225](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L225) |
 
 #### Methods
 
@@ -311,7 +311,7 @@ const allData = await ds.getAll();
 query(sql: string, params?: unknown[]): Promise<QueryResult>;
 ```
 
-Defined in: [types/index.ts:254](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L254)
+Defined in: [types/index.ts:257](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L257)
 
 Execute a parameterized query on the datasource.
 
@@ -360,7 +360,7 @@ Promise resolving to an array of records
 getAll(): Promise<QueryResult>;
 ```
 
-Defined in: [types/index.ts:273](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L273)
+Defined in: [types/index.ts:276](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L276)
 
 Get all data from the datasource.
 
@@ -387,7 +387,7 @@ Promise resolving to an array of all records
 
 ### CustomDatasourceDefinition
 
-Defined in: [types/index.ts:299](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L299)
+Defined in: [types/index.ts:302](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L302)
 
 Definition for a custom datasource type.
 
@@ -407,7 +407,7 @@ return a [`Datasource`](#datasource) instance.
 create(config: DatasourceConfig): Promise<Datasource>;
 ```
 
-Defined in: [types/index.ts:300](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L300)
+Defined in: [types/index.ts:303](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L303)
 
 ###### Parameters
 
@@ -423,7 +423,7 @@ Defined in: [types/index.ts:300](https://github.com/foo-ogawa/embedoc/blob/main/
 
 ### TypeScriptDatasourceConfig
 
-Defined in: [types/index.ts:329](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L329)
+Defined in: [types/index.ts:332](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L332)
 
 Configuration of the built-in `typescript` datasource.
 
@@ -443,22 +443,22 @@ datasources.
 
 | Property | Type | Description | Defined in |
 | ------ | ------ | ------ | ------ |
-| <a id="type"></a> `type` | `'typescript'` |  | [types/index.ts:330](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L330) |
-| <a id="entry_points"></a> `entry_points` | `string[]` | Entry point files whose exports form the public API. | [types/index.ts:332](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L332) |
-| <a id="tsconfig"></a> `tsconfig?` | `string` | tsconfig.json to compile with (default: the nearest one above the first entry point). | [types/index.ts:334](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L334) |
-| <a id="exclude_internal"></a> `exclude_internal?` | `boolean` | Leave out symbols and members tagged `@internal` (default: true). | [types/index.ts:336](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L336) |
-| <a id="exclude_private"></a> `exclude_private?` | `boolean` | Leave out `private` and `#private` class members (default: true). | [types/index.ts:338](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L338) |
-| <a id="exclude_externals"></a> `exclude_externals?` | `boolean` | Leave out symbols declared in external libraries such as node_modules (default: true). | [types/index.ts:340](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L340) |
-| <a id="source_link_template"></a> `source_link_template?` | `string` | Source link URL with the placeholders `{path}` (relative to the working directory), `{line}` and `{gitRevision}`. No link is produced without it. | [types/index.ts:345](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L345) |
-| <a id="git_revision"></a> `git_revision?` | `string` | Value of `{gitRevision}`. Required when the template uses `{gitRevision}`. | [types/index.ts:347](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L347) |
-| <a id="sort"></a> `sort?` | `'source-order' \| 'alphabetical'` | Record order: `source-order` (file path, then position) or `alphabetical` (default: source-order). | [types/index.ts:349](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L349) |
-| <a id="pages"></a> `pages?` | [`ApiSymbolKind`](#apisymbolkind)`[]` | Kinds whose symbols get a page of their own (`page` = `<kindDir>/<name>.md`, `hasPage` = true), e.g. `[class, interface, function]`. Default: none. The renderers and the generator read `page` / `hasPage`, so this list is the only place that decides which symbols have pages. | [types/index.ts:356](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L356) |
+| <a id="type"></a> `type` | `'typescript'` |  | [types/index.ts:333](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L333) |
+| <a id="entry_points"></a> `entry_points` | `string[]` | Entry point files whose exports form the public API. | [types/index.ts:335](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L335) |
+| <a id="tsconfig"></a> `tsconfig?` | `string` | tsconfig.json to compile with (default: the nearest one above the first entry point). | [types/index.ts:337](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L337) |
+| <a id="exclude_internal"></a> `exclude_internal?` | `boolean` | Leave out symbols and members tagged `@internal` (default: true). | [types/index.ts:339](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L339) |
+| <a id="exclude_private"></a> `exclude_private?` | `boolean` | Leave out `private` and `#private` class members (default: true). | [types/index.ts:341](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L341) |
+| <a id="exclude_externals"></a> `exclude_externals?` | `boolean` | Leave out symbols declared in external libraries such as node_modules (default: true). | [types/index.ts:343](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L343) |
+| <a id="source_link_template"></a> `source_link_template?` | `string` | Source link URL with the placeholders `{path}` (relative to the working directory), `{line}` and `{gitRevision}`. No link is produced without it. | [types/index.ts:348](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L348) |
+| <a id="git_revision"></a> `git_revision?` | `string` | Value of `{gitRevision}`. Required when the template uses `{gitRevision}`. | [types/index.ts:350](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L350) |
+| <a id="sort"></a> `sort?` | `'source-order' \| 'alphabetical'` | Record order: `source-order` (file path, then position) or `alphabetical` (default: source-order). | [types/index.ts:352](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L352) |
+| <a id="pages"></a> `pages?` | [`ApiSymbolKind`](#apisymbolkind)`[]` | Kinds whose symbols get a page of their own (`page` = `<kindDir>/<name>.md`, `hasPage` = true), e.g. `[class, interface, function]`. Default: none. The renderers and the generator read `page` / `hasPage`, so this list is the only place that decides which symbols have pages. | [types/index.ts:359](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L359) |
 
 ***
 
 ### MarkdownHelper
 
-Defined in: [types/index.ts:540](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L540)
+Defined in: [types/index.ts:543](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L543)
 
 Helper interface for generating Markdown content.
 
@@ -494,7 +494,7 @@ export default defineEmbed({
 table(headers: string[], rows: (string | number | boolean | null | undefined)[][]): string;
 ```
 
-Defined in: [types/index.ts:564](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L564)
+Defined in: [types/index.ts:567](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L567)
 
 Generate a Markdown table.
 
@@ -536,7 +536,7 @@ Formatted Markdown table string
 list(items: string[], ordered?: boolean): string;
 ```
 
-Defined in: [types/index.ts:590](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L590)
+Defined in: [types/index.ts:593](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L593)
 
 Generate a Markdown list.
 
@@ -579,7 +579,7 @@ Formatted Markdown list string
 codeBlock(code: string, language?: string): string;
 ```
 
-Defined in: [types/index.ts:608](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L608)
+Defined in: [types/index.ts:611](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L611)
 
 Generate a fenced code block.
 
@@ -614,7 +614,7 @@ Formatted Markdown code block string
 link(text: string, url: string): string;
 ```
 
-Defined in: [types/index.ts:623](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L623)
+Defined in: [types/index.ts:626](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L626)
 
 Generate a Markdown link.
 
@@ -646,7 +646,7 @@ Formatted Markdown link string
 heading(text: string, level?: number): string;
 ```
 
-Defined in: [types/index.ts:638](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L638)
+Defined in: [types/index.ts:641](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L641)
 
 Generate a Markdown heading.
 
@@ -678,7 +678,7 @@ Formatted Markdown heading string
 bold(text: string): string;
 ```
 
-Defined in: [types/index.ts:652](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L652)
+Defined in: [types/index.ts:655](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L655)
 
 Wrap text in bold formatting.
 
@@ -709,7 +709,7 @@ Bold formatted string
 italic(text: string): string;
 ```
 
-Defined in: [types/index.ts:666](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L666)
+Defined in: [types/index.ts:669](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L669)
 
 Wrap text in italic formatting.
 
@@ -740,7 +740,7 @@ Italic formatted string
 checkbox(checked: boolean): string;
 ```
 
-Defined in: [types/index.ts:680](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L680)
+Defined in: [types/index.ts:683](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L683)
 
 Generate a checkbox character.
 
@@ -767,7 +767,7 @@ Checkbox character ('✔' if checked, '' if not)
 
 ### EmbedContext
 
-Defined in: [types/index.ts:716](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L716)
+Defined in: [types/index.ts:719](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L719)
 
 Context object passed to an embed's render function.
 
@@ -806,18 +806,18 @@ export default defineEmbed({
 
 | Property | Type | Description | Defined in |
 | ------ | ------ | ------ | ------ |
-| <a id="params"></a> `params` | `Record<string, string>` | Parameters from the marker attributes.<br><br>Parsed from the marker syntax: `<!--@embedoc:embed_name param1="value1" param2="value2"-->`<br><br>Variable references (`${...}`) are resolved before passing to the embed.<br><br>**Example** `// Marker: <!--@embedoc:table_columns id="users" schema="public"-->` `const { id, schema } = ctx.params;` `// id = "users", schema = "public"` | [types/index.ts:732](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L732) |
-| <a id="frontmatter"></a> `frontmatter` | `Record<string, unknown>` | Frontmatter data from the document.<br><br>Parsed from YAML frontmatter at the top of the document.<br><br>**Example** `// Document frontmatter:` `// ---` `// doc_id: "users"` `// schema: "public"` `// ---` `const docId = ctx.frontmatter['doc_id'] as string;` | [types/index.ts:750](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L750) |
-| <a id="datasources"></a> `datasources` | `Record<string,`[`Datasource`](#datasource)`>` | Map of configured datasources.<br><br>Keys are datasource names from `embedoc.config.yaml`. Includes both external datasources and inline datasources defined in the document.<br><br>**Example** `// Access SQLite datasource` `const db = ctx.datasources['metadata_db'];` `const rows = await db.query('SELECT * FROM users');` `// Access inline datasource` `const config = ctx.datasources['project_config'];` `const data = await config.getAll();` | [types/index.ts:770](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L770) |
-| <a id="markdown"></a> `markdown` | [`MarkdownHelper`](#markdownhelper) | Markdown generation helper.<br><br>Always available. Provides methods for creating tables, lists, code blocks, links, and other Markdown elements.<br><br>**See** [`MarkdownHelper`](#markdownhelper) | [types/index.ts:780](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L780) |
-| <a id="filepath"></a> `filePath` | `string` | Absolute path to the current file being processed.<br><br>Useful for generating relative links or file references.<br><br>**Example** `const dir = path.dirname(ctx.filePath);` `const relativePath = path.relative(dir, targetFile);` | [types/index.ts:793](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L793) |
-| <a id="existingcontent"></a> `existingContent?` | `string` | Existing content between the markers (before replacement).<br><br>Useful for error recovery - return `existingContent` when data sources are unavailable to preserve the previous state.<br><br>**Example** `try {` `const data = await fetchFromDatabase();` `return { content: formatData(data) };` `} catch (error) {` `console.warn('Database unavailable, keeping existing content');` `return { content: ctx.existingContent ?? null };` `}` | [types/index.ts:812](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L812) |
+| <a id="params"></a> `params` | `Record<string, string>` | Parameters from the marker attributes.<br><br>Parsed from the marker syntax: `<!--@embedoc:embed_name param1="value1" param2="value2"-->`<br><br>Variable references (`${...}`) are resolved before passing to the embed.<br><br>**Example** `// Marker: <!--@embedoc:table_columns id="users" schema="public"-->` `const { id, schema } = ctx.params;` `// id = "users", schema = "public"` | [types/index.ts:735](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L735) |
+| <a id="frontmatter"></a> `frontmatter` | `Record<string, unknown>` | Frontmatter data from the document.<br><br>Parsed from YAML frontmatter at the top of the document.<br><br>**Example** `// Document frontmatter:` `// ---` `// doc_id: "users"` `// schema: "public"` `// ---` `const docId = ctx.frontmatter['doc_id'] as string;` | [types/index.ts:753](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L753) |
+| <a id="datasources"></a> `datasources` | `Record<string,`[`Datasource`](#datasource)`>` | Map of configured datasources.<br><br>Keys are datasource names from `embedoc.config.yaml`. Includes both external datasources and inline datasources defined in the document.<br><br>**Example** `// Access SQLite datasource` `const db = ctx.datasources['metadata_db'];` `const rows = await db.query('SELECT * FROM users');` `// Access inline datasource` `const config = ctx.datasources['project_config'];` `const data = await config.getAll();` | [types/index.ts:773](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L773) |
+| <a id="markdown"></a> `markdown` | [`MarkdownHelper`](#markdownhelper) | Markdown generation helper.<br><br>Always available. Provides methods for creating tables, lists, code blocks, links, and other Markdown elements.<br><br>**See** [`MarkdownHelper`](#markdownhelper) | [types/index.ts:783](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L783) |
+| <a id="filepath"></a> `filePath` | `string` | Absolute path to the current file being processed.<br><br>Useful for generating relative links or file references.<br><br>**Example** `const dir = path.dirname(ctx.filePath);` `const relativePath = path.relative(dir, targetFile);` | [types/index.ts:796](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L796) |
+| <a id="existingcontent"></a> `existingContent?` | `string` | Existing content between the markers (before replacement).<br><br>Useful for error recovery - return `existingContent` when data sources are unavailable to preserve the previous state.<br><br>**Example** `try {` `const data = await fetchFromDatabase();` `return { content: formatData(data) };` `} catch (error) {` `console.warn('Database unavailable, keeping existing content');` `return { content: ctx.existingContent ?? null };` `}` | [types/index.ts:815](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L815) |
 
 ***
 
 ### EmbedResult
 
-Defined in: [types/index.ts:827](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L827)
+Defined in: [types/index.ts:830](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L830)
 
 Result object returned from an embed's render function.
 
@@ -835,13 +835,13 @@ export default defineEmbed({
 
 | Property | Type | Description | Defined in |
 | ------ | ------ | ------ | ------ |
-| <a id="content"></a> `content` | `string \| null \| undefined` | Generated content to insert between the markers.<br><br>This string replaces the existing content between the start and end markers in the document.<br><br>Return `null` or `undefined` to keep the existing content (useful for error recovery when data sources are unavailable). | [types/index.ts:837](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L837) |
+| <a id="content"></a> `content` | `string \| null \| undefined` | Generated content to insert between the markers.<br><br>This string replaces the existing content between the start and end markers in the document.<br><br>Return `null` or `undefined` to keep the existing content (useful for error recovery when data sources are unavailable). | [types/index.ts:840](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L840) |
 
 ***
 
 ### EmbedDefinition
 
-Defined in: [types/index.ts:869](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L869)
+Defined in: [types/index.ts:872](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L872)
 
 Embed definition interface.
 
@@ -876,7 +876,7 @@ export default defineEmbed({
 
 | Property | Type | Description | Defined in |
 | ------ | ------ | ------ | ------ |
-| <a id="dependson"></a> `dependsOn?` | `string[]` | List of datasource names this embed depends on.<br><br>Used for dependency tracking in incremental builds. When a datasource changes, all documents using embeds that depend on it will be rebuilt.<br><br>**Example** `dependsOn: ['metadata_db', 'api_endpoints']` | [types/index.ts:882](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L882) |
+| <a id="dependson"></a> `dependsOn?` | `string[]` | List of datasource names this embed depends on.<br><br>Used for dependency tracking in incremental builds. When a datasource changes, all documents using embeds that depend on it will be rebuilt.<br><br>**Example** `dependsOn: ['metadata_db', 'api_endpoints']` | [types/index.ts:885](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L885) |
 
 #### Methods
 
@@ -886,7 +886,7 @@ export default defineEmbed({
 render(ctx: EmbedContext): Promise<EmbedResult>;
 ```
 
-Defined in: [types/index.ts:893](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L893)
+Defined in: [types/index.ts:896](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L896)
 
 Render function that generates the embed content.
 
@@ -913,7 +913,7 @@ Promise resolving to the embed result with generated content
 type QueryResult = Record<string, unknown>[];
 ```
 
-Defined in: [types/index.ts:181](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L181)
+Defined in: [types/index.ts:184](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L184)
 
 Query result returned from datasource operations.
 
@@ -938,7 +938,7 @@ users.forEach(user => {
 type InlineFormatParser = (content: string) => unknown;
 ```
 
-Defined in: [types/index.ts:312](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L312)
+Defined in: [types/index.ts:315](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L315)
 
 Parser function for a custom inline datasource format.
 
@@ -963,7 +963,7 @@ type ApiSymbolKind = | 'namespace'
   | 'reference';
 ```
 
-Defined in: [types/index.ts:360](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L360)
+Defined in: [types/index.ts:363](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L363)
 
 Kind of an exported API symbol. A `reference` is a second exported name of a symbol.
 
@@ -981,7 +981,7 @@ type ApiMemberKind = | 'constructor'
   | 'enum-member';
 ```
 
-Defined in: [types/index.ts:371](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L371)
+Defined in: [types/index.ts:374](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L374)
 
 Kind of a member of a class, interface, object type or enum.
 
@@ -1002,7 +1002,7 @@ type ApiSource = {
 };
 ```
 
-Defined in: [types/index.ts:381](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L381)
+Defined in: [types/index.ts:384](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L384)
 
 Where a declaration is in the source.
 
@@ -1010,10 +1010,10 @@ Where a declaration is in the source.
 
 | Property | Type | Description | Defined in |
 | ------ | ------ | ------ | ------ |
-| <a id="file"></a> `file` | `string` | Path relative to the common directory of the entry points (for display). | [types/index.ts:383](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L383) |
-| <a id="path"></a> `path` | `string` | Path relative to the working directory (the `{path}` of the link template). | [types/index.ts:385](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L385) |
-| <a id="line"></a> `line` | `number` | 1-based line of the declaration name. | [types/index.ts:387](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L387) |
-| <a id="url"></a> `url` | `string \| null` | Link built from `source_link_template`, or null without a template. | [types/index.ts:389](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L389) |
+| <a id="file"></a> `file` | `string` | Path relative to the common directory of the entry points (for display). | [types/index.ts:386](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L386) |
+| <a id="path"></a> `path` | `string` | Path relative to the working directory (the `{path}` of the link template). | [types/index.ts:388](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L388) |
+| <a id="line"></a> `line` | `number` | 1-based line of the declaration name. | [types/index.ts:390](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L390) |
+| <a id="url"></a> `url` | `string \| null` | Link built from `source_link_template`, or null without a template. | [types/index.ts:392](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L392) |
 
 ***
 
@@ -1028,7 +1028,7 @@ type ApiTag = {
 };
 ```
 
-Defined in: [types/index.ts:393](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L393)
+Defined in: [types/index.ts:396](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L396)
 
 A JSDoc block tag such as `@example`, `@deprecated` or `@see`.
 
@@ -1036,8 +1036,8 @@ A JSDoc block tag such as `@example`, `@deprecated` or `@see`.
 
 | Property | Type | Description | Defined in |
 | ------ | ------ | ------ | ------ |
-| <a id="tag"></a> `tag` | `string` | Tag name without `@`. | [types/index.ts:395](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L395) |
-| <a id="text"></a> `text` | `string` | Tag text. ``...`` inline tags are kept as written. | [types/index.ts:397](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L397) |
+| <a id="tag"></a> `tag` | `string` | Tag name without `@`. | [types/index.ts:398](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L398) |
+| <a id="text"></a> `text` | `string` | Tag text. ``...`` inline tags are kept as written. | [types/index.ts:400](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L400) |
 
 ***
 
@@ -1052,7 +1052,7 @@ type ApiTypeParameter = {
 };
 ```
 
-Defined in: [types/index.ts:401](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L401)
+Defined in: [types/index.ts:404](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L404)
 
 A type parameter of a declaration or signature.
 
@@ -1060,10 +1060,10 @@ A type parameter of a declaration or signature.
 
 | Property | Type | Description | Defined in |
 | ------ | ------ | ------ | ------ |
-| <a id="name"></a> `name` | `string` |  | [types/index.ts:402](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L402) |
-| <a id="constraint"></a> `constraint` | `string \| null` |  | [types/index.ts:403](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L403) |
-| <a id="default"></a> `default` | `string \| null` |  | [types/index.ts:404](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L404) |
-| <a id="description"></a> `description` | `string` |  | [types/index.ts:405](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L405) |
+| <a id="name"></a> `name` | `string` |  | [types/index.ts:405](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L405) |
+| <a id="constraint"></a> `constraint` | `string \| null` |  | [types/index.ts:406](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L406) |
+| <a id="default"></a> `default` | `string \| null` |  | [types/index.ts:407](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L407) |
+| <a id="description"></a> `description` | `string` |  | [types/index.ts:408](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L408) |
 
 ***
 
@@ -1080,7 +1080,7 @@ type ApiParameter = {
 };
 ```
 
-Defined in: [types/index.ts:409](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L409)
+Defined in: [types/index.ts:412](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L412)
 
 A parameter of a signature.
 
@@ -1088,12 +1088,12 @@ A parameter of a signature.
 
 | Property | Type | Description | Defined in |
 | ------ | ------ | ------ | ------ |
-| <a id="name"></a> `name` | `string` |  | [types/index.ts:410](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L410) |
-| <a id="type"></a> `type` | `string` |  | [types/index.ts:411](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L411) |
-| <a id="optional"></a> `optional` | `boolean` |  | [types/index.ts:412](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L412) |
-| <a id="rest"></a> `rest` | `boolean` |  | [types/index.ts:413](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L413) |
-| <a id="defaultvalue"></a> `defaultValue` | `string \| null` |  | [types/index.ts:414](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L414) |
-| <a id="description"></a> `description` | `string` |  | [types/index.ts:415](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L415) |
+| <a id="name"></a> `name` | `string` |  | [types/index.ts:413](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L413) |
+| <a id="type"></a> `type` | `string` |  | [types/index.ts:414](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L414) |
+| <a id="optional"></a> `optional` | `boolean` |  | [types/index.ts:415](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L415) |
+| <a id="rest"></a> `rest` | `boolean` |  | [types/index.ts:416](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L416) |
+| <a id="defaultvalue"></a> `defaultValue` | `string \| null` |  | [types/index.ts:417](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L417) |
+| <a id="description"></a> `description` | `string` |  | [types/index.ts:418](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L418) |
 
 ***
 
@@ -1113,7 +1113,7 @@ type ApiSignature = {
 };
 ```
 
-Defined in: [types/index.ts:419](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L419)
+Defined in: [types/index.ts:422](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L422)
 
 A call, construct, method or accessor signature.
 
@@ -1121,13 +1121,13 @@ A call, construct, method or accessor signature.
 
 | Property | Type | Description | Defined in |
 | ------ | ------ | ------ | ------ |
-| <a id="code"></a> `code` | `string` | Declaration as code, e.g. `function f(a: string): void;`. | [types/index.ts:421](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L421) |
-| <a id="summary"></a> `summary` | `string` |  | [types/index.ts:422](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L422) |
-| <a id="tags"></a> `tags` | [`ApiTag`](#apitag)`[]` |  | [types/index.ts:423](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L423) |
-| <a id="typeparameters"></a> `typeParameters` | [`ApiTypeParameter`](#apitypeparameter)`[]` |  | [types/index.ts:424](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L424) |
-| <a id="parameters"></a> `parameters` | [`ApiParameter`](#apiparameter)`[]` |  | [types/index.ts:425](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L425) |
-| <a id="returns"></a> `returns` | `{ type: string; description: string } \| null` | Return type and `@returns` text; null for constructors and setters. | [types/index.ts:427](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L427) |
-| <a id="source"></a> `source` | [`ApiSource`](#apisource) |  | [types/index.ts:428](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L428) |
+| <a id="code"></a> `code` | `string` | Declaration as code, e.g. `function f(a: string): void;`. | [types/index.ts:424](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L424) |
+| <a id="summary"></a> `summary` | `string` |  | [types/index.ts:425](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L425) |
+| <a id="tags"></a> `tags` | [`ApiTag`](#apitag)`[]` |  | [types/index.ts:426](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L426) |
+| <a id="typeparameters"></a> `typeParameters` | [`ApiTypeParameter`](#apitypeparameter)`[]` |  | [types/index.ts:427](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L427) |
+| <a id="parameters"></a> `parameters` | [`ApiParameter`](#apiparameter)`[]` |  | [types/index.ts:428](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L428) |
+| <a id="returns"></a> `returns` | `{ type: string; description: string } \| null` | Return type and `@returns` text; null for constructors and setters. | [types/index.ts:430](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L430) |
+| <a id="source"></a> `source` | [`ApiSource`](#apisource) |  | [types/index.ts:431](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L431) |
 
 ***
 
@@ -1152,7 +1152,7 @@ type ApiMember = {
 };
 ```
 
-Defined in: [types/index.ts:432](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L432)
+Defined in: [types/index.ts:435](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L435)
 
 A member of a class, interface, object type alias or enum.
 
@@ -1160,18 +1160,18 @@ A member of a class, interface, object type alias or enum.
 
 | Property | Type | Description | Defined in |
 | ------ | ------ | ------ | ------ |
-| <a id="name"></a> `name` | `string` |  | [types/index.ts:433](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L433) |
-| <a id="kind"></a> `kind` | [`ApiMemberKind`](#apimemberkind) |  | [types/index.ts:434](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L434) |
-| <a id="static"></a> `static` | `boolean` |  | [types/index.ts:435](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L435) |
-| <a id="readonly"></a> `readonly` | `boolean` |  | [types/index.ts:436](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L436) |
-| <a id="optional"></a> `optional` | `boolean` |  | [types/index.ts:437](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L437) |
-| <a id="protected"></a> `protected` | `boolean` |  | [types/index.ts:438](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L438) |
-| <a id="abstract"></a> `abstract` | `boolean` |  | [types/index.ts:439](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L439) |
-| <a id="type"></a> `type` | `string \| null` | Type of a property, index signature or enum member value; null otherwise. | [types/index.ts:441](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L441) |
-| <a id="summary"></a> `summary` | `string` |  | [types/index.ts:442](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L442) |
-| <a id="tags"></a> `tags` | [`ApiTag`](#apitag)`[]` |  | [types/index.ts:443](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L443) |
-| <a id="signatures"></a> `signatures` | [`ApiSignature`](#apisignature)`[]` | Signatures of constructors, methods, accessors (get then set) and call signatures. | [types/index.ts:445](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L445) |
-| <a id="source"></a> `source` | [`ApiSource`](#apisource) |  | [types/index.ts:446](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L446) |
+| <a id="name"></a> `name` | `string` |  | [types/index.ts:436](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L436) |
+| <a id="kind"></a> `kind` | [`ApiMemberKind`](#apimemberkind) |  | [types/index.ts:437](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L437) |
+| <a id="static"></a> `static` | `boolean` |  | [types/index.ts:438](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L438) |
+| <a id="readonly"></a> `readonly` | `boolean` |  | [types/index.ts:439](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L439) |
+| <a id="optional"></a> `optional` | `boolean` |  | [types/index.ts:440](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L440) |
+| <a id="protected"></a> `protected` | `boolean` |  | [types/index.ts:441](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L441) |
+| <a id="abstract"></a> `abstract` | `boolean` |  | [types/index.ts:442](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L442) |
+| <a id="type"></a> `type` | `string \| null` | Type of a property, index signature or enum member value; null otherwise. | [types/index.ts:444](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L444) |
+| <a id="summary"></a> `summary` | `string` |  | [types/index.ts:445](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L445) |
+| <a id="tags"></a> `tags` | [`ApiTag`](#apitag)`[]` |  | [types/index.ts:446](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L446) |
+| <a id="signatures"></a> `signatures` | [`ApiSignature`](#apisignature)`[]` | Signatures of constructors, methods, accessors (get then set) and call signatures. | [types/index.ts:448](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L448) |
+| <a id="source"></a> `source` | [`ApiSource`](#apisource) |  | [types/index.ts:449](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L449) |
 
 ***
 
@@ -1192,7 +1192,7 @@ type ApiLinkTarget = {
 };
 ```
 
-Defined in: [types/index.ts:453](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L453)
+Defined in: [types/index.ts:456](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L456)
 
 A ``...`` target in a symbol's documentation that resolves to an
 exported symbol (or a member of one) of the same datasource.
@@ -1201,12 +1201,12 @@ exported symbol (or a member of one) of the same datasource.
 
 | Property | Type | Description | Defined in |
 | ------ | ------ | ------ | ------ |
-| <a id="target"></a> `target` | `string` | Target as written in the comment, e.g. `DBModel.use`. | [types/index.ts:455](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L455) |
-| <a id="name"></a> `name` | `string` | Exported symbol the target names. | [types/index.ts:457](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L457) |
-| <a id="kind"></a> `kind` | [`ApiSymbolKind`](#apisymbolkind) |  | [types/index.ts:458](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L458) |
-| <a id="kinddir"></a> `kindDir` | `string` |  | [types/index.ts:459](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L459) |
-| <a id="page"></a> `page` | `string \| null` | Page of the target symbol (its `page`), or null when it is on the index. | [types/index.ts:461](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L461) |
-| <a id="member"></a> `member` | `string \| null` | Member part of the target (`use` in `DBModel.use`), or null. | [types/index.ts:463](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L463) |
+| <a id="target"></a> `target` | `string` | Target as written in the comment, e.g. `DBModel.use`. | [types/index.ts:458](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L458) |
+| <a id="name"></a> `name` | `string` | Exported symbol the target names. | [types/index.ts:460](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L460) |
+| <a id="kind"></a> `kind` | [`ApiSymbolKind`](#apisymbolkind) |  | [types/index.ts:461](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L461) |
+| <a id="kinddir"></a> `kindDir` | `string` |  | [types/index.ts:462](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L462) |
+| <a id="page"></a> `page` | `string \| null` | Page of the target symbol (its `page`), or null when it is on the index. | [types/index.ts:464](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L464) |
+| <a id="member"></a> `member` | `string \| null` | Member part of the target (`use` in `DBModel.use`), or null. | [types/index.ts:466](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L466) |
 
 ***
 
@@ -1251,7 +1251,7 @@ type ApiSymbol = {
 };
 ```
 
-Defined in: [types/index.ts:473](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L473)
+Defined in: [types/index.ts:476](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L476)
 
 One record of the `typescript` datasource: an exported symbol.
 
@@ -1263,25 +1263,25 @@ e.g. `./docs/api/{kindDir}/{name}.md`.
 
 | Property | Type | Description | Defined in |
 | ------ | ------ | ------ | ------ |
-| <a id="name"></a> `name` | `string` | Exported name. | [types/index.ts:475](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L475) |
-| <a id="kind"></a> `kind` | [`ApiSymbolKind`](#apisymbolkind) |  | [types/index.ts:476](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L476) |
-| <a id="kindlabel"></a> `kindLabel` | `string` | Display name of the kind, e.g. `Class`, `Type Alias`. | [types/index.ts:478](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L478) |
-| <a id="kinddir"></a> `kindDir` | `string` | Directory name for the kind, e.g. `classes`, `type-aliases`. | [types/index.ts:480](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L480) |
-| <a id="category"></a> `category` | `string \| null` | Text of the `@category` tag (also kept in `tags`), or null. | [types/index.ts:482](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L482) |
-| <a id="summary"></a> `summary` | `string` |  | [types/index.ts:483](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L483) |
-| <a id="tags"></a> `tags` | [`ApiTag`](#apitag)`[]` |  | [types/index.ts:484](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L484) |
-| <a id="code"></a> `code` | `string \| null` | Declaration as code for type aliases and variables; null otherwise. | [types/index.ts:486](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L486) |
-| <a id="typeparameters"></a> `typeParameters` | [`ApiTypeParameter`](#apitypeparameter)`[]` |  | [types/index.ts:487](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L487) |
-| <a id="extends"></a> `extends` | `string[]` |  | [types/index.ts:488](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L488) |
-| <a id="implements"></a> `implements` | `string[]` |  | [types/index.ts:489](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L489) |
-| <a id="signatures"></a> `signatures` | [`ApiSignature`](#apisignature)`[]` | Overload signatures of a function. | [types/index.ts:491](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L491) |
-| <a id="members"></a> `members` | [`ApiMember`](#apimember)`[]` | Members of a class, interface, enum, or object type alias. | [types/index.ts:493](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L493) |
-| <a id="source"></a> `source` | [`ApiSource`](#apisource) |  | [types/index.ts:494](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L494) |
-| <a id="abstract"></a> `abstract` | `boolean` | True for an `abstract` class. | [types/index.ts:496](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L496) |
-| <a id="haspage"></a> `hasPage` | `boolean` | Whether the symbol has a page of its own (its kind is in the datasource's `pages`). | [types/index.ts:498](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L498) |
-| <a id="page"></a> `page` | `string \| null` | Path of its page relative to the API root (`classes/Store.md`), or null. | [types/index.ts:500](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L500) |
-| <a id="referenceof"></a> `referenceOf` | `string \| null` | For a `reference` (`export { A as B }`): the name `A` is documented under; null otherwise. | [types/index.ts:502](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L502) |
-| <a id="links"></a> `links` | [`ApiLinkTarget`](#apilinktarget)`[]` | Exported symbols this symbol refers to: ``...`` targets, `referenceOf`, and names used in its types (parameters, returns, properties, heritage). | [types/index.ts:507](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L507) |
+| <a id="name"></a> `name` | `string` | Exported name. | [types/index.ts:478](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L478) |
+| <a id="kind"></a> `kind` | [`ApiSymbolKind`](#apisymbolkind) |  | [types/index.ts:479](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L479) |
+| <a id="kindlabel"></a> `kindLabel` | `string` | Display name of the kind, e.g. `Class`, `Type Alias`. | [types/index.ts:481](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L481) |
+| <a id="kinddir"></a> `kindDir` | `string` | Directory name for the kind, e.g. `classes`, `type-aliases`. | [types/index.ts:483](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L483) |
+| <a id="category"></a> `category` | `string \| null` | Text of the `@category` tag (also kept in `tags`), or null. | [types/index.ts:485](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L485) |
+| <a id="summary"></a> `summary` | `string` |  | [types/index.ts:486](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L486) |
+| <a id="tags"></a> `tags` | [`ApiTag`](#apitag)`[]` |  | [types/index.ts:487](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L487) |
+| <a id="code"></a> `code` | `string \| null` | Declaration as code for type aliases and variables; null otherwise. | [types/index.ts:489](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L489) |
+| <a id="typeparameters"></a> `typeParameters` | [`ApiTypeParameter`](#apitypeparameter)`[]` |  | [types/index.ts:490](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L490) |
+| <a id="extends"></a> `extends` | `string[]` |  | [types/index.ts:491](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L491) |
+| <a id="implements"></a> `implements` | `string[]` |  | [types/index.ts:492](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L492) |
+| <a id="signatures"></a> `signatures` | [`ApiSignature`](#apisignature)`[]` | Overload signatures of a function. | [types/index.ts:494](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L494) |
+| <a id="members"></a> `members` | [`ApiMember`](#apimember)`[]` | Members of a class, interface, enum, or object type alias. | [types/index.ts:496](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L496) |
+| <a id="source"></a> `source` | [`ApiSource`](#apisource) |  | [types/index.ts:497](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L497) |
+| <a id="abstract"></a> `abstract` | `boolean` | True for an `abstract` class. | [types/index.ts:499](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L499) |
+| <a id="haspage"></a> `hasPage` | `boolean` | Whether the symbol has a page of its own (its kind is in the datasource's `pages`). | [types/index.ts:501](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L501) |
+| <a id="page"></a> `page` | `string \| null` | Path of its page relative to the API root (`classes/Store.md`), or null. | [types/index.ts:503](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L503) |
+| <a id="referenceof"></a> `referenceOf` | `string \| null` | For a `reference` (`export { A as B }`): the name `A` is documented under; null otherwise. | [types/index.ts:505](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L505) |
+| <a id="links"></a> `links` | [`ApiLinkTarget`](#apilinktarget)`[]` | Exported symbols this symbol refers to: ``...`` targets, `referenceOf`, and names used in its types (parameters, returns, properties, heritage). | [types/index.ts:510](https://github.com/foo-ogawa/embedoc/blob/main/src/types/index.ts#L510) |
 
 ## Variables
 
@@ -1373,7 +1373,7 @@ export default defineEmbed({
 function renderApiIndex(records: QueryResult, options?: ApiMarkdownOptions): string;
 ```
 
-Defined in: [helpers/api-markdown.ts:448](https://github.com/foo-ogawa/embedoc/blob/main/src/helpers/api-markdown.ts#L448)
+Defined in: [helpers/api-markdown.ts:450](https://github.com/foo-ogawa/embedoc/blob/main/src/helpers/api-markdown.ts#L450)
 
 Render the index page of an API: symbols grouped by kind (and by `@category`).
 
@@ -1401,7 +1401,7 @@ Markdown
 function renderApiPage(record: Record<string, unknown>, options?: ApiMarkdownOptions): string;
 ```
 
-Defined in: [helpers/api-markdown.ts:488](https://github.com/foo-ogawa/embedoc/blob/main/src/helpers/api-markdown.ts#L488)
+Defined in: [helpers/api-markdown.ts:490](https://github.com/foo-ogawa/embedoc/blob/main/src/helpers/api-markdown.ts#L490)
 
 Render the page of one symbol (its `page`, `<kindDir>/<name>.md`).
 

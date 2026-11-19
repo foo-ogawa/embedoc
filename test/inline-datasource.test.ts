@@ -706,3 +706,56 @@ describe('custom inline format parsers', () => {
   });
 });
 
+
+describe('what an inline block may run and reach', () => {
+  const block = (name: string, format: ParsedInlineData['format'], content: string): ParsedInlineData => ({
+    name,
+    format,
+    content,
+    startLine: 1,
+    endLine: 3,
+    byteSize: Buffer.byteLength(content),
+  });
+  const probe = globalThis as { __embedocProbe?: string };
+
+  it('does not run a js block unless the configuration allows js', () => {
+    delete probe.__embedocProbe;
+    expect(() =>
+      buildInlineDatasources([block('d', 'js', '(globalThis.__embedocProbe = "ran", {a: 1})')], '/doc.md')
+    ).toThrow('uses disallowed format "js"');
+    expect(probe.__embedocProbe).toBeUndefined();
+
+    const allowed = buildInlineDatasources(
+      [block('d', 'js', '({a: 1})')],
+      '/doc.md',
+      { allowedFormats: ['yaml', 'js'] }
+    );
+    expect(allowed.get('d')?.data).toEqual({ a: 1 });
+  });
+
+  it('builds no inline datasource when inline datasources are disabled', () => {
+    delete probe.__embedocProbe;
+    const datasources = buildInlineDatasources(
+      [block('d', 'js', '(globalThis.__embedocProbe = "ran", {a: 1})'), block('e', 'yaml', 'a: 1')],
+      '/doc.md',
+      { enabled: false, allowedFormats: ['yaml', 'js'] }
+    );
+    expect(datasources.size).toBe(0);
+    expect(probe.__embedocProbe).toBeUndefined();
+  });
+
+  it('rejects a path through __proto__, constructor or prototype and leaves Object.prototype alone', () => {
+    for (const name of ['x.constructor.prototype.polluted', 'x.__proto__.polluted', 'x.a.prototype']) {
+      expect(() => buildInlineDatasources([block(name, 'text', '1')], '/doc.md')).toThrow('Reserved name');
+    }
+    expect(() => setDotPath({}, '__proto__', 1)).toThrow('Reserved name');
+    expect(({} as Record<string, unknown>)['polluted']).toBeUndefined();
+  });
+
+  it('takes only own properties of the custom formats as formats', () => {
+    expect(() =>
+      buildInlineDatasources([block('d', 'toString' as ParsedInlineData['format'], 'x')], '/doc.md', {}, {})
+    ).toThrow('uses disallowed format "toString"');
+    expect(parseInlineContent('x', 'toString', {}, {})).toBe('x');
+  });
+});

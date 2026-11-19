@@ -318,7 +318,7 @@ output:
 inline_datasource:
   enabled: true
   maxBytes: 10240           # Max size per inline block (default: 10KB)
-  allowedFormats:           # Allowed formats (default: all)
+  allowedFormats:           # Allowed formats (default: these five; add js to evaluate JavaScript)
     - yaml
     - json
     - csv
@@ -537,6 +537,9 @@ datasources:
     query: "SELECT * FROM tables"
 ```
 
+The `better-sqlite3` package (^11.7.0) must be installed in your project (`npm install better-sqlite3`);
+it is an optional peer dependency of embedoc, needed only by the `sqlite` datasource.
+
 Usage in embed:
 ```typescript
 const rows = await ctx.datasources['metadata_db'].query(
@@ -582,7 +585,11 @@ datasources:
     pattern: "./docs/**/*.md"
 ```
 
-Returns array of file info objects with `path`, `name`, `ext`, etc.
+Returns array of file info objects with `path`, `name`, `ext`, etc., sorted by path.
+
+Patterns (here, in `targets`, and in `exclude`) support `*`, `?`, `[...]`, `**` and `{a,b}`.
+`*`, `?`, `[...]` and `**` match a name that begins with `.` only when the pattern segment
+does too. A pattern names files only: a directory, or a link to one, is not a result.
 
 ### TypeScript (Public API)
 
@@ -713,6 +720,11 @@ Define data directly in documents using `@embedoc-data` markers.
 | `csv` | CSV with header row |
 | `table` | Markdown table |
 | `text` | Plain text |
+| `js` | JavaScript expression (such as an object literal), evaluated at build time. Not allowed by default |
+
+A `js` block runs as code in the build process, with the rights of whoever runs the build. It is
+allowed only when the configuration lists it in `inline_datasource.allowedFormats`; enable it only
+when everyone who can edit the documents may run code where they are built.
 
 ### Format Examples
 
@@ -861,9 +873,9 @@ See [API Reference](./docs/api/README.md#inlinedatasource) for `InlineDatasource
 ```yaml
 # embedoc.config.yaml
 inline_datasource:
-  enabled: true              # Enable/disable (default: true)
+  enabled: true              # false: @embedoc-data blocks define nothing (default: true)
   maxBytes: 10240           # Max size per block (default: 10KB)
-  allowedFormats:           # Restrict formats
+  allowedFormats:           # Formats a block may use (default: yaml, json, csv, table, text)
     - yaml
     - json
   conflictPolicy: warn      # warn | error | prefer_external
@@ -872,6 +884,10 @@ inline_datasource:
     - '^```\w*\s*\n?'
     - '\n?```\s*$'
 ```
+
+An `@embedoc-data` marker inside an embed block is part of the generated content, not a definition.
+A renderer whose output contains an end marker outside a code fence (or an unclosed code fence) fails
+the file, which is then not written: the next build would end the block there.
 
 ---
 
@@ -985,6 +1001,10 @@ datasources:
         where:            # Optional: only records whose fields match
           schema: [public, audit]
 ```
+
+The values of the placeholders place a file below the directory `output_path` names before its first
+placeholder (`./docs/tables` here). A record whose values lead out of that directory (such as
+`../other`) is not written and fails the generation.
 
 `where` maps a record field to a value or a list of values; a file is generated only for the
 records whose every listed field equals (as a string) one of its values.

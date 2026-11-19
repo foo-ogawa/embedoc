@@ -5,7 +5,7 @@
 
 import { readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { glob } from 'glob';
+import { globFiles } from '../utils/glob.js';
 import type {
   EmbedocConfig,
   EmbedDefinition,
@@ -133,7 +133,7 @@ export async function processFile(
     // Merge inline datasources with external (inline takes precedence)
     const mergedDatasources: Record<string, Datasource> = { ...datasources };
     for (const [name, ds] of inlineDatasources) {
-      if (name in mergedDatasources) {
+      if (Object.hasOwn(mergedDatasources, name)) {
         const policy = config.inline_datasource?.conflictPolicy ?? 'warn';
         if (policy === 'error') {
           throw new Error(
@@ -215,6 +215,18 @@ export async function processFile(
           '\n' +
           marker.endMarkerLine;
 
+      // The content is written verbatim: it must read back as this one block.
+      // An end marker or an unclosed code fence in it would end the block
+      // elsewhere on the next build.
+      const reread = parseMarkers(newContent, commentStyle, parseOptions);
+      if (reread.length !== 1 || reread[0]!.endIndex !== newContent.length) {
+        const line = frontmatterLineOffset + bodyContent.slice(0, marker.startIndex).split('\n').length;
+        throw new Error(
+          `Output of embed "${marker.templateName}" at ${filePath}:${line} contains marker syntax ` +
+            `that ends its block early (an end marker or an unclosed code fence)`
+        );
+      }
+
       processedContent =
         processedContent.slice(0, marker.startIndex) +
         newContent +
@@ -263,12 +275,7 @@ export async function processFile(
 export async function getTargetFiles(
   targetConfig: TargetConfig
 ): Promise<string[]> {
-  const files = await glob(targetConfig.pattern, {
-    ignore: targetConfig.exclude ?? [],
-    nodir: true,
-  });
-
-  return files;
+  return globFiles(targetConfig.pattern, { ignore: targetConfig.exclude ?? [] });
 }
 
 /**

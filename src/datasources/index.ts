@@ -30,7 +30,7 @@ export async function createDatasource(
   config: DatasourceConfig,
   customTypes?: Record<string, CustomDatasourceDefinition>
 ): Promise<Datasource> {
-  if (customTypes && config.type in customTypes) {
+  if (customTypes && Object.hasOwn(customTypes, config.type)) {
     return customTypes[config.type]!.create(config);
   }
 

@@ -335,7 +335,8 @@ function getLineNumber(content: string, index: number): number {
 }
 
 /**
- * Parse inline data markers (@embedoc-data)
+ * Parse inline data markers (@embedoc-data).
+ * Markers inside an embed block are its generated content, not definitions.
  */
 export function parseInlineDataMarkers(
   content: string,
@@ -345,6 +346,10 @@ export function parseInlineDataMarkers(
   const results: ParsedInlineData[] = [];
   const { start, end } = commentStyle;
   const inFence = insideRanges(options.markdown ? codeFenceRanges(content) : []);
+  const inBlock = insideRanges(
+    parseMarkers(content, commentStyle, options).map((m): [number, number] => [m.startIndex, m.endIndex])
+  );
+  const skip = (index: number): boolean => inFence(index) || inBlock(index);
 
   const startEscaped = escapeRegExp(start);
   const endEscaped = end ? escapeRegExp(end) : '';
@@ -375,7 +380,7 @@ export function parseInlineDataMarkers(
 
   while ((match = startPattern.exec(content)) !== null) {
     const startIndex = match.index;
-    if (inFence(startIndex)) {
+    if (skip(startIndex)) {
       continue;
     }
     const startMarkerLine = match[0];
@@ -394,7 +399,7 @@ export function parseInlineDataMarkers(
     // Find end marker - search from after start marker
     const afterStart = startIndex + startMarkerLine.length;
     const remainingContent = content.slice(afterStart);
-    const endFound = findOutside(endPattern, content, afterStart, inFence);
+    const endFound = findOutside(endPattern, content, afterStart, skip);
     const endMatch = endFound && { index: endFound.index - afterStart, 0: endFound[0] };
 
     if (endMatch) {

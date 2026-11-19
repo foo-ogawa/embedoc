@@ -397,3 +397,24 @@ describe('api_page generator helper', () => {
     expect(page).toBe(renderApiPage(symbol('Store') as unknown as Record<string, unknown>, { indexFile: 'globals.md' }));
   });
 });
+
+describe('Markdown that survives the text it quotes', () => {
+  it('writes inline code whose text has a run of backticks as one code span', () => {
+    const color = symbol('Color');
+    const members = color.members.map((m, i) => (i === 0 ? { ...m, tags: [{ tag: 'default', text: 'x``y' }] } : m));
+    const page = renderApiIndex([{ ...color, members } as unknown as QueryResult[number]], {});
+    expect(page).toContain('**Default** ``` x``y ```');
+  });
+
+  it('encodes the file path in a source link', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'embedoc-link-'));
+    try {
+      await writeFile(join(dir, 'a b#$&.ts'), 'export const value = 1;\n');
+      const ds = await createDatasource(config({ entry_points: [join(dir, 'a b#$&.ts')] }));
+      const [row] = (await ds.getAll()) as unknown as ApiSymbol[];
+      expect(row?.source.url).toMatch(/^https:\/\/example\.com\/r\/blob\/main\/[^ ]*\/a%20b%23%24%26\.ts#L1$/);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  }, SLOW);
+});

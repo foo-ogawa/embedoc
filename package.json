@@ -1,6 +1,6 @@
 {
   "name": "embedoc",
-  "version": "0.14.15",
+  "version": "0.14.16",
   "description": "In-place document generator that auto-updates marker blocks while preserving manual edits. Supports multiple datasources (SQLite, CSV, JSON, YAML, glob), programmable TypeScript embeds, and incremental builds with dependency tracking.",
   "type": "module",
   "workspaces": [
@@ -78,14 +78,9 @@
     "node": ">=18.0.0"
   },
   "dependencies": {
-    "better-sqlite3": "^11.7.0",
-    "chokidar": "^4.0.3",
-    "commander": "^13.0.0",
     "csv-parse": "^7.0.3",
-    "glob": "^14.0.6",
     "handlebars": "^4.7.10",
     "js-yaml": "^4.3.2",
-    "picocolors": "^1.1.1",
     "tsx": "^4.23.15"
   },
   "devDependencies": {
@@ -95,17 +90,25 @@
     "@types/node": "^22.20.5",
     "@typescript-eslint/eslint-plugin": "^8.72.2",
     "@typescript-eslint/parser": "^8.72.2",
+    "better-sqlite3": "^11.7.0",
+    "chokidar": "^4.0.3",
     "cli-contracts": "^0.34.12",
+    "commander": "^13.0.0",
     "esbuild": "^0.28.0",
     "eslint": "^10.14.0",
     "globals": "^17.14.0",
+    "picocolors": "^1.1.1",
     "typescript": "^5.7.2",
     "vitest": "^4.1.12"
   },
   "peerDependencies": {
+    "better-sqlite3": "^11.7.0",
     "typescript": ">=5.0.0 <7.0.0"
   },
   "peerDependenciesMeta": {
+    "better-sqlite3": {
+      "optional": true
+    },
     "typescript": {
       "optional": true
     }

@@ -19,6 +19,15 @@ function escapeCell(value: string | number | boolean | null | undefined): string
 }
 
 /**
+ * A run of backticks longer than any in `text`, and at least `min` long:
+ * a code block or code span opened with it is not closed by its content.
+ */
+export function backtickFence(text: string, min: number): string {
+  const longest = Math.max(0, ...(text.match(/`+/g) ?? []).map((run) => run.length));
+  return '`'.repeat(Math.max(min, longest + 1));
+}
+
+/**
  * Create a Markdown helper instance
  */
 export function createMarkdownHelper(): MarkdownHelper {
@@ -70,7 +79,8 @@ export function createMarkdownHelper(): MarkdownHelper {
      * Generate a code block
      */
     codeBlock(code: string, language = ''): string {
-      return '```' + language + '\n' + code + '\n```';
+      const fence = backtickFence(code, 3);
+      return fence + language + '\n' + code + '\n' + fence;
     },
 
     /**
