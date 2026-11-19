@@ -78,9 +78,7 @@
     "node": ">=18.0.0"
   },
   "dependencies": {
-    "better-sqlite3": "^11.7.0",
     "csv-parse": "^7.0.3",
-    "glob": "^14.0.6",
     "handlebars": "^4.7.10",
     "js-yaml": "^4.3.2",
     "tsx": "^4.23.15"
@@ -92,6 +90,7 @@
     "@types/node": "^22.20.5",
     "@typescript-eslint/eslint-plugin": "^8.72.2",
     "@typescript-eslint/parser": "^8.72.2",
+    "better-sqlite3": "^11.7.0",
     "chokidar": "^4.0.3",
     "cli-contracts": "^0.34.12",
     "commander": "^13.0.0",
@@ -103,9 +102,13 @@
     "vitest": "^4.1.12"
   },
   "peerDependencies": {
+    "better-sqlite3": "^11.7.0",
     "typescript": ">=5.0.0 <7.0.0"
   },
   "peerDependenciesMeta": {
+    "better-sqlite3": {
+      "optional": true
+    },
     "typescript": {
       "optional": true
     }
