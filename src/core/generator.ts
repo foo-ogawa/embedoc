@@ -13,7 +13,7 @@ import type {
   GenerateResult,
   Datasource,
 } from '../types/index.js';
-import { glob } from 'glob';
+import { globFiles } from '../utils/glob.js';
 import { renderApiPage } from '../helpers/api-markdown.js';
 
 /**
@@ -221,7 +221,7 @@ async function pruneOutputs(
 ): Promise<GenerateResult[]> {
   const pattern = outputPath.replace(/\{[^}]+\}/g, '*');
   const results: GenerateResult[] = [];
-  for (const file of (await glob(pattern, { nodir: true })).sort()) {
+  for (const file of globFiles(pattern)) {
     if (keep.has(resolve(file))) continue;
     const result: GenerateResult = { filePath: file, success: true, skipped: false, removed: true };
     try {

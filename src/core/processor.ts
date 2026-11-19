@@ -5,7 +5,7 @@
 
 import { readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { glob } from 'glob';
+import { globFiles } from '../utils/glob.js';
 import type {
   EmbedocConfig,
   EmbedDefinition,
@@ -263,12 +263,7 @@ export async function processFile(
 export async function getTargetFiles(
   targetConfig: TargetConfig
 ): Promise<string[]> {
-  const files = await glob(targetConfig.pattern, {
-    ignore: targetConfig.exclude ?? [],
-    nodir: true,
-  });
-
-  return files;
+  return globFiles(targetConfig.pattern, { ignore: targetConfig.exclude ?? [] });
 }
 
 /**

@@ -5,7 +5,7 @@
 
 import { stat } from 'node:fs/promises';
 import { basename, dirname, extname } from 'node:path';
-import { glob as globFn } from 'glob';
+import { globFiles } from '../utils/glob.js';
 import type { Datasource, DatasourceConfig, QueryResult } from '../types/index.js';
 import { filterRows } from './filter.js';
 
@@ -37,7 +37,7 @@ export class GlobDatasource implements Datasource {
       return this.data;
     }
 
-    const files = await globFn(this.pattern, { nodir: true });
+    const files = globFiles(this.pattern);
     const fileInfos: FileInfo[] = [];
 
     for (const filePath of files) {
