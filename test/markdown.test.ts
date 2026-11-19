@@ -143,3 +143,13 @@ describe('MarkdownHelper', () => {
   });
 });
 
+
+describe('codeBlock with backticks in the code', () => {
+  it('opens with a fence longer than any backtick run in the code', async () => {
+    const { codeFenceRanges } = await import('../src/core/parser.js');
+    const md = createMarkdownHelper();
+    const block = md.codeBlock('a\n```\nb', 'md');
+    expect(block).toBe('````md\na\n```\nb\n````');
+    expect(codeFenceRanges(`${block}\nafter`)).toEqual([[0, block.length + 1]]);
+  });
+});

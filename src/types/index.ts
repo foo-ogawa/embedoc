@@ -90,7 +90,10 @@ export interface InlineDatasourceConfig {
   enabled?: boolean;
   /** Maximum size in bytes (default: 10240) */
   maxBytes?: number;
-  /** Allowed formats (default: all) */
+  /**
+   * Allowed formats (default: yaml, json, csv, table, text). `js` runs the
+   * block as JavaScript in the build process and is allowed only when listed.
+   */
   allowedFormats?: string[];
   /** Conflict policy when inline name matches external (default: warn) */
   conflictPolicy?: 'warn' | 'error' | 'prefer_external';

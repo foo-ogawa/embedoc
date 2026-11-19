@@ -318,3 +318,80 @@ describe('build with specific files', () => {
     expect(all.results.map((r) => path.relative(tempDir, r.filePath)).sort()).toEqual(['README.md', path.join('docs', 'a.md')]);
   });
 });
+
+describe('generated content is content', () => {
+  const target: TargetConfig = { pattern: '**/*.md', comment_style: 'html' };
+  const cfg: EmbedocConfig = { version: '1.0', targets: [target] };
+  let dir: string;
+
+  beforeEach(async () => {
+    dir = path.join(os.tmpdir(), `embedoc-generated-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+    await mkdir(dir, { recursive: true });
+  });
+
+  afterEach(async () => {
+    await rm(dir, { recursive: true, force: true });
+  });
+
+  const listDatasources: EmbedDefinition = {
+    render: async (ctx) => ({ content: `ds=${Object.keys(ctx.datasources).sort().join(',')}` }),
+  };
+
+  async function buildTwice(file: string, doc: string, embeds: Record<string, EmbedDefinition>) {
+    await writeFile(file, doc);
+    const first = await processFile(file, doc, target, embeds, {}, cfg);
+    const second = await processFile(file, await readFile(file, 'utf-8'), target, embeds, {}, cfg);
+    return { first, second, content: await readFile(file, 'utf-8') };
+  }
+
+  it('does not read an inline data marker in generated content as a definition', async () => {
+    const embeds: Record<string, EmbedDefinition> = {
+      quote: { render: async () => ({ content: 'see <!--@embedoc-data:quoted format="json"-->{"k":1}<!--@embedoc-data:end-->' }) },
+      list: listDatasources,
+    };
+    const doc = '<!--@embedoc:quote-->\n<!--@embedoc:end-->\n<!--@embedoc:list-->\n<!--@embedoc:end-->\n';
+    const { first, second, content } = await buildTwice(path.join(dir, 'a.md'), doc, embeds);
+    expect(first.success).toBe(true);
+    expect(second.success).toBe(true);
+    expect(content).toContain('ds=\n');
+  });
+
+  it('fails a file whose generated content would end its block early, and leaves it unwritten', async () => {
+    const called: string[] = [];
+    const embeds: Record<string, EmbedDefinition> = {
+      cell: { render: async () => ({ content: 'x <!--@embedoc:end-->\n<!--@embedoc:other mode="m"-->' }) },
+      other: { render: async (ctx) => { called.push(ctx.params['mode'] ?? ''); return { content: 'o' }; } },
+      nested: { render: async () => ({ content: '<!--@embedoc:other-->o<!--@embedoc:end-->' }) },
+      fence: { render: async () => ({ content: '```\nopen fence' }) },
+    };
+    for (const name of ['cell', 'nested', 'fence']) {
+      const file = path.join(dir, `${name}.md`);
+      const doc = `<!--@embedoc:${name}-->\n<!--@embedoc:end-->\n`;
+      await writeFile(file, doc);
+      const result = await processFile(file, doc, target, embeds, {}, cfg);
+      expect(result.success).toBe(false);
+      expect(result.error?.message).toContain(`Output of embed "${name}"`);
+      expect(await readFile(file, 'utf-8')).toBe(doc);
+    }
+    expect(called).toEqual([]);
+  });
+
+  it('keeps marker syntax inside a closed code fence of generated content', async () => {
+    const embeds: Record<string, EmbedDefinition> = {
+      example: { render: async () => ({ content: '```md\n<!--@embedoc:x-->\n<!--@embedoc:end-->\n```' }) },
+    };
+    const doc = '<!--@embedoc:example-->\n<!--@embedoc:end-->\n';
+    const { first, second, content } = await buildTwice(path.join(dir, 'e.md'), doc, embeds);
+    expect(first.success).toBe(true);
+    expect(second.success).toBe(true);
+    expect(content).toBe('<!--@embedoc:example-->\n```md\n<!--@embedoc:x-->\n<!--@embedoc:end-->\n```\n<!--@embedoc:end-->\n');
+  });
+
+  it('does not take an inherited name for an external datasource', async () => {
+    const doc = '<!--@embedoc-data:constructor format="yaml"-->a: 1<!--@embedoc-data:end-->\n<!--@embedoc:list-->\n<!--@embedoc:end-->\n';
+    const strict: EmbedocConfig = { ...cfg, inline_datasource: { conflictPolicy: 'error' } };
+    const result = await processFile(path.join(dir, 'c.md'), doc, target, { list: listDatasources }, {}, strict, true);
+    expect(result.error?.message).toBeUndefined();
+    expect(result.success).toBe(true);
+  });
+});

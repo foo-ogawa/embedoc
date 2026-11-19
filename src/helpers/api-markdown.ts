@@ -15,6 +15,7 @@ import type {
   QueryResult,
 } from '../types/index.js';
 import { INLINE_LINK, splitTypeText } from '../datasources/typescript.js';
+import { backtickFence } from './markdown.js';
 
 /**
  * Options for {@link renderApiIndex} and {@link renderApiPage}.
@@ -113,8 +114,8 @@ function escapeMarkdown(text: string): string {
 /** Inline code that survives backticks in the text. */
 function code(text: string): string {
   const flat = text.replace(/\s+/g, ' ').trim();
-  const fence = flat.includes('`') ? '``' : '`';
-  const pad = fence === '``' ? ' ' : '';
+  const fence = backtickFence(flat, 1);
+  const pad = flat.includes('`') ? ' ' : '';
   return `${fence}${pad}${flat}${pad}${fence}`;
 }
 
@@ -191,7 +192,8 @@ function definedIn(source: ApiSource): string {
 }
 
 function codeBlock(text: string): string {
-  return ['```ts', text, '```'].join('\n');
+  const fence = backtickFence(text, 3);
+  return [`${fence}ts`, text, fence].join('\n');
 }
 
 function tagsNamed(tags: ApiTag[], name: string): ApiTag[] {

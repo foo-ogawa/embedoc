@@ -76,7 +76,9 @@ const DEFAULT_STRIP_PATTERNS = [
 const DEFAULT_CONFIG: Required<Omit<InlineDatasourceConfig, 'stripPatterns'>> & { stripPatterns: string[] } = {
   enabled: true,
   maxBytes: 10240, // 10KB
-  allowedFormats: ['yaml', 'json', 'js', 'csv', 'table', 'text'],
+  // `js` runs the content as JavaScript in the build process: a configuration
+  // opts in to it by listing it.
+  allowedFormats: ['yaml', 'json', 'csv', 'table', 'text'],
   conflictPolicy: 'warn',
   allowAnonymous: false,
   stripCodeFences: true,
@@ -116,8 +118,13 @@ export function resolveDotPath(obj: unknown, path: string): unknown {
   return current;
 }
 
+/** Names that reach an object's prototype rather than a property of its own. */
+const PROTOTYPE_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+
 /**
- * Set value at dot-path, creating intermediate objects as needed
+ * Set value at dot-path, creating intermediate objects as needed.
+ * The path follows own properties only; `__proto__`, `constructor` and
+ * `prototype` are rejected.
  */
 export function setDotPath(
   obj: Record<string, unknown>,
@@ -126,7 +133,11 @@ export function setDotPath(
 ): void {
   const segments = parseDotPath(path);
   if (segments.length === 0) return;
-  
+  const reserved = segments.find((s) => typeof s === 'string' && PROTOTYPE_KEYS.has(s));
+  if (reserved !== undefined) {
+    throw new Error(`Reserved name "${reserved}" in path: ${path}`);
+  }
+
   let current: Record<string, unknown> = obj;
 
   for (let i = 0; i < segments.length - 1; i++) {
@@ -137,7 +148,7 @@ export function setDotPath(
       throw new Error(`Array index in middle of path not supported: ${path}`);
     }
 
-    if (!(segment in current)) {
+    if (!Object.hasOwn(current, segment)) {
       // Create intermediate object or array based on next segment
       current[segment] = typeof nextSegment === 'number' ? [] : {};
     }
@@ -235,7 +246,8 @@ export function parseInlineContent(
       return trimmed;
 
     default: {
-      const customParser = customFormats?.[format];
+      const customParser =
+        customFormats && Object.hasOwn(customFormats, format) ? customFormats[format] : undefined;
       if (customParser) {
         return customParser(trimmed);
       }
@@ -506,6 +518,9 @@ export function buildInlineDatasources(
 ): Map<string, InlineDatasource> {
   const mergedConfig = { ...DEFAULT_CONFIG, ...config };
   const datasources = new Map<string, InlineDatasource>();
+  if (!mergedConfig.enabled) {
+    return datasources;
+  }
 
   // Content processing options
   const contentOptions: ContentProcessingOptions = {
@@ -525,7 +540,7 @@ export function buildInlineDatasources(
     }
 
     // Validate format (allow custom formats even if not in allowedFormats list)
-    const isCustomFormat = customFormats != null && data.format in customFormats;
+    const isCustomFormat = customFormats != null && Object.hasOwn(customFormats, data.format);
     if (!isCustomFormat && !mergedConfig.allowedFormats.includes(data.format)) {
       throw new Error(
         `Inline datasource "${data.name}" uses disallowed format "${data.format}"`

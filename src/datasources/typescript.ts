@@ -560,7 +560,7 @@ class ApiExtractor {
     if (template) {
       url = template
         .replace(/\{gitRevision\}/g, this.options.gitRevision ?? '')
-        .replace(/\{path\}/g, path)
+        .replace(/\{path\}/g, () => path.split('/').map(encodeURIComponent).join('/'))
         .replace(/\{line\}/g, String(line));
     }
     return { file, path, line, url };
